@@ -11,8 +11,7 @@ class LexicalAnalyzer:
         current_token = ''
         state = State.NORMAL
         for c in java_code:
-            new_state, finalize_value = token_machine[state.value[0]][classify_symbol(c).value[0]]
-
+            new_state, finalize_value = token_machine[state.value][classify_symbol(c).value]
             if finalize_value == 0:
                 ...
             elif finalize_value == 1:
