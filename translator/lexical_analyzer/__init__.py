@@ -10,6 +10,10 @@ class LexicalAnalyzer:
         tokens = []
         current_token = ''
         state = State.NORMAL
+
+        line_number = 1
+        symbol_number = 1
+
         for c in java_code:
             new_state, finalize_value = token_machine[state.value][classify_symbol(c).value]
             if finalize_value == 0:
@@ -31,7 +35,12 @@ class LexicalAnalyzer:
             state = new_state
 
             if state == State.ERROR:
-                raise Exception('Unexpected symbol: {}'.format(c))
+                raise Exception('Unexpected symbol: {} at line {}, symbol {}'.format(c, line_number, symbol_number))
+
+            if c == '\n':
+                line_number += 1
+                symbol_number = 1
+            symbol_number += 1
 
         if current_token != '':
             tokens.append(current_token)
