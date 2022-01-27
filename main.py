@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 
 from translator import Translator
 
@@ -24,7 +25,7 @@ def main():
         with open(cpp_file_name, 'w') as cpp_file:
             translator = Translator()
             cpp_source_code = translator.run(java_file.read())
-            cpp_file.write(cpp_source_code)
+            cpp_file.write(str(cpp_source_code))
             print('Success. Output saved to {}.'.format(cpp_file_name))
 
 
@@ -32,5 +33,5 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as e:
-        print(e)
+        print(e, file=sys.stderr)
 
