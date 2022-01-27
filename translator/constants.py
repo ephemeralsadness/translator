@@ -1,0 +1,8 @@
+
+UNARY_OPERATORS = ['+', '-', '++', '--', '!']
+ARITHMETIC_OPERATORS = ['+', '-', '*', '/', '%']
+LOGICAL_OPERATORS = ['||', '&&']
+COMPARISON_OPERATORS = ['<', '>', '==', '!=', '<=', '>=']
+ASSIGNMENT_OPERATORS = ['=', '+=', '-=', '*=', '/=', '%=']
+
+OPERATORS = UNARY_OPERATORS + ARITHMETIC_OPERATORS + LOGICAL_OPERATORS + COMPARISON_OPERATORS + ASSIGNMENT_OPERATORS

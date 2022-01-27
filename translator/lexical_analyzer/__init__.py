@@ -1,5 +1,5 @@
 from translator.lexical_analyzer.token_machine import Symbols, State, token_machine, classify_symbol
-
+import translator.constants as constants
 
 class LexicalAnalyzer:
 
@@ -44,6 +44,16 @@ class LexicalAnalyzer:
 
         if current_token != '':
             tokens.append(current_token)
+
+        if state == State.STRING_LITERAL:
+            raise Exception('Expected end of string literal')
+        if state == State.CHAR_LITERAL:
+            raise Exception('Expected end of char literal')
+
+        # post-check
+        for token in tokens:
+            if token[0] in Symbols.OPERATORS and token not in constants.OPERATORS:
+                raise Exception('Bad operator: {}'.format(token))
 
         return tokens
 
