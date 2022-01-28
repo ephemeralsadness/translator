@@ -2,17 +2,7 @@
 import string
 import sys
 from enum import Enum
-from translator.syntax_analyzer.rules import rules
-
-
-class Rule(object):
-    def __init__(self, lhs, rhs):
-        self.lhs = lhs
-        self.rhs = rhs
-
-    def __repr__(self):
-        return f'{self.lhs} -> {" ".join(self.rhs)}'
-
+from translator.syntax_analyzer.rules import Rule, java_rules
 
 class Grammar(object):
     def __init__(self, rules, start_rule):
@@ -130,18 +120,16 @@ def to_lr(item):
     return sum(map(to_lr, item.prev), []) + [item.rule]
 
 
-if __name__ == '__main__':
-    start_rule = '<program>'
+def make_right_parsing(whitespace_tokens):
+    start_rule = '~program\\'
     terminals = set(string.digits + string.ascii_letters + string.whitespace + '_(){}[]+-*/%><=!&|;,"\'.#@№$^:?')
 
-    grammar = Grammar(rules, start_rule)
-    sentence = list(sys.argv[1])
+    grammar = Grammar(java_rules, start_rule)
 
-    earley_set = earley(grammar, terminals, sentence)
+    earley_set = earley(grammar, terminals, whitespace_tokens)
 
-    if len(earley_set) != len(sentence) + 1:
-        print('Incorrect sentence.')
-        exit(1)
+    if len(earley_set) != len(whitespace_tokens) + 1:
+        raise Exception('Incorrect sentence')
 
     for item in earley_set[-1]:
         if item.dot == len(item.rule.rhs) and \
@@ -150,7 +138,6 @@ if __name__ == '__main__':
             last = item
             break
     else:
-        print('Incorrect sentence.')
-        exit(1)
+        raise Exception('Incorrect sentence')
 
-    print('\n'.join(map(str, reversed(to_lr(last)))))
+    return to_lr(last)
