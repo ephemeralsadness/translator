@@ -11,7 +11,7 @@ class ContextManager:
         self.scopes.append(dict())
 
     def pop_scope(self):
-        self.scopes.append(dict())
+        self.scopes.pop()
 
     def type_of_variable(self, var_name):
         for scope in self.scopes:

@@ -689,7 +689,7 @@ class VarDeclarationDGN(DGN):
     def check(self):
         var_type, is_init = context_manager.type_of_variable(self.identifier.reduce())
         if var_type is not None:
-            raise Exception('Multiple declaration of variable {}'.format(self.identifier))
+            raise Exception('Multiple declaration of variable "{}"'.format(self.identifier.reduce()))
         context_manager.set_type_of_variable(self.identifier.reduce(), self.valuable_type.value, self.is_initialized)
 
     def generate(self):
