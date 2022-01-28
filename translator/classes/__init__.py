@@ -1,5 +1,6 @@
 from translator.syntax_analyzer.tree import rule_manager
 from translator.code_generator.code_generator import generator_manager
+from translator.semantic_analyzer.context_manager import context_manager
 
 
 class DGN:
@@ -24,7 +25,9 @@ class ProgramDGN(DGN):
         self.identifier = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...
+        if self.functions:
+            self.functions_declarations.check()
+        self.main_function.check()
 
     def generate(self):
         generator_manager.println('#include <iostream>')
@@ -47,11 +50,10 @@ class IdentifierDGN(DGN):
         self.value = None
 
     def check(self):
-        ...
+        pass
 
     def generate(self):
-        if self.value is None:
-            self.value = self.reduce()
+        self.value = self.reduce()
         generator_manager.print(self.value)
 
     def reduce(self):
@@ -62,9 +64,8 @@ class IdentifierDGN(DGN):
             memo = self.identifier_start.letter_instance.value
         else:
             memo = self.identifier_start.letter_instance.value + self.identifier_next.reduce()
-        self.identifier_start = None
-        self.identifier_next = None
-        return memo
+        self.value = memo
+        return self.value
 
 
 class IdentifierStartDGN(DGN):
@@ -127,37 +128,42 @@ class DigitDGN(DGN):
 
 
 class MainFunctionDGN(DGN):
-    def __init__(self):
+    def __init__(self, has_body):
         super().__init__()
-        self.function_body = rule_manager.create_next_rule_instance()
+        self.has_body = has_body
+        if self.has_body:
+            self.function_body = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...
+        if self.has_body:
+            self.function_body.check()
 
     def generate(self):
         generator_manager.println('int main() {')
         generator_manager.increase_tabs()
-        self.function_body.generate()
+        if self.has_body:
+            self.function_body.generate()
         generator_manager.decrease_tabs()
         generator_manager.println('}')
 
 
 class CodeFieldDGN(DGN):
-    def __init__(self, is_lambda):
+    def __init__(self, has_code_field):
         super().__init__()
-        self.is_lambda = is_lambda
-        self.code_field = None
-        if not self.is_lambda:
+        self.has_code_field = has_code_field
+        if self.has_code_field:
             self.code_field = rule_manager.create_next_rule_instance()
-            self.instruction = rule_manager.create_next_rule_instance()
+        self.instruction = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...
+        self.instruction.check()
+        if self.has_code_field:
+            self.code_field.check()
 
     def generate(self):
-        if not self.is_lambda:
-            self.instruction.generate()
-            generator_manager.println()
+        self.instruction.generate()
+        generator_manager.println()
+        if self.has_code_field:
             self.code_field.generate()
 
 
@@ -168,7 +174,7 @@ class InstructionDGN(DGN):
         self.concrete_instruction = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...
+        self.concrete_instruction.check()
 
     def generate(self):
         self.concrete_instruction.generate()
@@ -184,7 +190,8 @@ class AssignmentDGN(DGN):
         self.identifier = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...
+        type = context_manager.type_of_variable(self.identifier.reduce())
+
 
     def generate(self):
         self.identifier.generate()
@@ -409,14 +416,19 @@ class OtherSymbDGN(DGN):
 
 
 class IfOperatorDGN(DGN):
-    def __init__(self, what):
+    def __init__(self, what, has_empty_if_body=None, has_empty_else_body=None):
         super().__init__()
         self.what = what
-        if self.what == 'if-else':
+        self.has_empty_if_body = has_empty_if_body
+        self.has_empty_else_body = has_empty_else_body
+
+        if self.what == 'if-else' and (not self.has_empty_else_body):
             self.else_code_field = rule_manager.create_next_rule_instance()
         if self.what == 'if-else-if':
             self.else_if = rule_manager.create_next_rule_instance()
-        self.if_code_field = rule_manager.create_next_rule_instance()
+
+        if not self.has_empty_if_body:
+            self.if_code_field = rule_manager.create_next_rule_instance()
         self.expression = rule_manager.create_next_rule_instance()
 
     def check(self):
@@ -427,7 +439,8 @@ class IfOperatorDGN(DGN):
         self.expression.generate()
         generator_manager.println(') {')
         generator_manager.increase_tabs()
-        self.if_code_field.generate()
+        if not self.has_empty_if_body:
+            self.if_code_field.generate()
         generator_manager.decrease_tabs()
         generator_manager.print('}')
 
@@ -437,7 +450,8 @@ class IfOperatorDGN(DGN):
         elif self.what == 'if-else':
             generator_manager.println(' else {')
             generator_manager.increase_tabs()
-            self.else_code_field.generate()
+            if not self.has_empty_else_body:
+                self.else_code_field.generate()
             generator_manager.decrease_tabs()
             generator_manager.print('}')
 
@@ -455,13 +469,18 @@ class BooleanValueDGN(DGN):
 
 
 class FunctionsDeclarationDGN(DGN):
-    def __init__(self, multiple_declarations):
+    def __init__(self, multiple_declarations, has_params, has_body):
         super().__init__()
         self.multiple_declarations = multiple_declarations
+        self.has_params = has_params
+        self.has_body = has_body
         if self.multiple_declarations:
             self.function_declarations = rule_manager.create_next_rule_instance()
-        self.function_body = rule_manager.create_next_rule_instance()
-        self.function_params = rule_manager.create_next_rule_instance()
+
+        if self.has_body:
+            self.function_body = rule_manager.create_next_rule_instance()
+        if self.has_params:
+            self.function_params = rule_manager.create_next_rule_instance()
         self.identifier = rule_manager.create_next_rule_instance()
         self.function_return_type = rule_manager.create_next_rule_instance()
 
@@ -474,10 +493,12 @@ class FunctionsDeclarationDGN(DGN):
         generator_manager.print(' ')
         self.identifier.generate()
         generator_manager.print('(')
-        self.function_params.generate()
+        if self.has_params:
+            self.function_params.generate()
         generator_manager.println(') {')
         generator_manager.increase_tabs()
-        self.function_body.generate()
+        if self.has_body:
+            self.function_body.generate()
         generator_manager.decrease_tabs()
         generator_manager.println('}')
         generator_manager.println()
@@ -537,26 +558,20 @@ class ValuableTypeDGN(DGN):
 
 
 class FunctionParamsDGN(DGN):
-    def __init__(self, is_lambda, is_multiple):
+    def __init__(self, is_multiple):
         super().__init__()
-        self.is_lambda = is_lambda
         self.is_multiple = is_multiple
 
         if is_multiple:
             self.function_params = rule_manager.create_next_rule_instance()
-
-        if not is_lambda:
-            self.identifier = rule_manager.create_next_rule_instance()
-            self.valuable_type = rule_manager.create_next_rule_instance()
+        self.identifier = rule_manager.create_next_rule_instance()
+        self.valuable_type = rule_manager.create_next_rule_instance()
         self.value = None
 
     def check(self):
         ...
 
     def generate(self):
-        if self.is_lambda:
-            return
-
         self.valuable_type.generate()
         generator_manager.print(' ')
         self.identifier.generate()
@@ -575,7 +590,9 @@ class FunctionBodyDGN(DGN):
         self.code_field = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...
+        context_manager.push_scope()
+        self.code_field.check()
+        context_manager.pop_scope()
 
     def generate(self):
         self.code_field.generate()
@@ -616,10 +633,12 @@ class VarDeclarationDGN(DGN):
 
 
 class FunctionCallDGN(DGN):
-    def __init__(self, name=None):
+    def __init__(self, has_params, name=None):
         super().__init__()
+        self.has_params = has_params
         self.name = name
-        self.function_call_params = rule_manager.create_next_rule_instance()
+        if self.has_params:
+            self.function_call_params = rule_manager.create_next_rule_instance()
         if self.name is None:
             self.function_identifier = rule_manager.create_next_rule_instance()
 
@@ -632,28 +651,23 @@ class FunctionCallDGN(DGN):
         else:
             self.function_identifier.generate()
         generator_manager.print('(')
-        self.function_call_params.generate()
+        if self.has_params:
+            self.function_call_params.generate()
         generator_manager.print(')')
 
 
 class FunctionCallParamsDGN(DGN):
-    def __init__(self, is_lambda, is_multiple):
+    def __init__(self, is_multiple):
         super().__init__()
-        self.is_lambda = is_lambda
         self.is_multiple = is_multiple
-
         if is_multiple:
             self.function_call_params = rule_manager.create_next_rule_instance()
-
-        if not is_lambda:
-            self.expression = rule_manager.create_next_rule_instance()
+        self.expression = rule_manager.create_next_rule_instance()
 
     def check(self):
         ...
 
     def generate(self):
-        if self.is_lambda:
-            return
         self.expression.generate()
         if self.is_multiple:
             generator_manager.print(', ')
@@ -661,9 +675,11 @@ class FunctionCallParamsDGN(DGN):
 
 
 class WhileDGN(DGN):
-    def __init__(self):
+    def __init__(self, has_body):
         super().__init__()
-        self.code_field = rule_manager.create_next_rule_instance()
+        self.has_body = has_body
+        if self.has_body:
+            self.code_field = rule_manager.create_next_rule_instance()
         self.expression = rule_manager.create_next_rule_instance()
 
     def check(self):
@@ -674,16 +690,19 @@ class WhileDGN(DGN):
         self.expression.generate()
         generator_manager.println(') {')
         generator_manager.increase_tabs()
-        self.code_field.generate()
+        if self.has_body:
+            self.code_field.generate()
         generator_manager.decrease_tabs()
         generator_manager.println('}')
 
 
 class DoWhileDGN(DGN):
-    def __init__(self):
+    def __init__(self, has_body):
         super().__init__()
+        self.has_body = has_body
         self.expression = rule_manager.create_next_rule_instance()
-        self.code_field = rule_manager.create_next_rule_instance()
+        if self.has_body:
+            self.code_field = rule_manager.create_next_rule_instance()
 
     def check(self):
         ...
@@ -691,7 +710,8 @@ class DoWhileDGN(DGN):
     def generate(self):
         generator_manager.print('do {')
         generator_manager.increase_tabs()
-        self.code_field.generate()
+        if self.has_body:
+            self.code_field.generate()
         generator_manager.decrease_tabs()
         generator_manager.print('} while (')
         self.expression.generate()
@@ -699,10 +719,12 @@ class DoWhileDGN(DGN):
 
 
 class ForDGN(DGN):
-    def __init__(self, is_initialization):
+    def __init__(self, is_initialization, has_body):
         super().__init__()
+        self.has_body = has_body
         self.is_initialization = is_initialization
-        self.code_field = rule_manager.create_next_rule_instance()
+        if self.has_body:
+            self.code_field = rule_manager.create_next_rule_instance()
         self.move_assignment = rule_manager.create_next_rule_instance()
         self.logical_expression = rule_manager.create_next_rule_instance()
         self.assignment = rule_manager.create_next_rule_instance()
@@ -719,39 +741,42 @@ class ForDGN(DGN):
         self.move_assignment.generate()
         generator_manager.println(') {')
         generator_manager.increase_tabs()
-        self.code_field.generate()
+        if self.has_body:
+            self.code_field.generate()
         generator_manager.decrease_tabs()
         generator_manager.println('}')
 
 
 class StringLiteralDGN(DGN):
-    def __init__(self):
+    def __init__(self, is_not_empty):
         super().__init__()
-        self.letters = rule_manager.create_next_rule_instance()
+        self.is_not_empty = is_not_empty
+        if self.is_not_empty:
+            self.letters = rule_manager.create_next_rule_instance()
 
     def check(self):
         ...
 
     def generate(self):
         generator_manager.print('"')
-        self.letters.generate()
+        if self.is_not_empty:
+            self.letters.generate()
         generator_manager.print('"')
 
 
 class StringLettersDGN(DGN):
-    def __init__(self, is_lambda):
+    def __init__(self, is_multiple):
         super().__init__()
-        self.is_lambda = is_lambda
-        if not self.is_lambda:
+        self.is_multiple = is_multiple
+        if self.is_multiple:
             self.string_letters = rule_manager.create_next_rule_instance()
-            self.symbol = rule_manager.create_next_rule_instance()
+        self.symbol = rule_manager.create_next_rule_instance()
 
     def check(self):
         ...
 
     def generate(self):
-        if self.is_lambda:
-            return
         generator_manager.print(self.symbol.value)
-        self.string_letters.generate()
+        if self.is_multiple:
+            self.string_letters.generate()
 
