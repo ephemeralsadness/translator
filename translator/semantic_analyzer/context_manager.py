@@ -4,6 +4,7 @@ from translator.constants import KEYWORDS
 class ContextManager:
     def __init__(self):
         self.scopes = []
+        self.functions = dict()
         self.keywords = KEYWORDS
 
     def push_scope(self):
