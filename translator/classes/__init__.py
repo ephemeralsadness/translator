@@ -60,7 +60,7 @@ class IdentifierStartDGN(DGN):
 class LetterDGN(DGN):
     def __init__(self):
         super().__init__()
-        self.letter = str(rule_manager.get_current_rule().rhs[0])
+        self.value = str(rule_manager.get_current_rule().rhs[0])
 
     def check(self):
         ...
@@ -89,7 +89,7 @@ class IdentifierNextDGN(DGN):
 class DigitDGN(DGN):
     def __init__(self):
         super().__init__()
-        self.digit = str(rule_manager.get_current_rule().rhs[0])
+        self.value = str(rule_manager.get_current_rule().rhs[0])
 
     def check(self):
         ...
@@ -309,10 +309,10 @@ class SymbValueDGN(DGN):
         ...
 
 
-class SymbValueDGN(DGN):
+class OtherSymbDGN(DGN):
     def __init__(self):
         super().__init__()
-        self.symbol = str(rule_manager.get_current_rule().rhs[0])
+        self.value = str(rule_manager.get_current_rule().rhs[0])
 
     def check(self):
         ...
