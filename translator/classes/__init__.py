@@ -722,7 +722,7 @@ class WhileDGN(DGN):
         self.expression = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...
+        ...  # todo check
 
     def generate(self):
         generator_manager.print('while (')
@@ -744,7 +744,7 @@ class DoWhileDGN(DGN):
             self.code_field = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...
+        ...  # todo check
 
     def generate(self):
         generator_manager.print('do {')
@@ -769,7 +769,7 @@ class ForDGN(DGN):
         self.assignment = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...
+        ...  # todo check
 
     def generate(self):
         generator_manager.print('for (')
