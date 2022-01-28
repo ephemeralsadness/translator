@@ -480,7 +480,7 @@ java_rules = [
          FunctionBodyDGN),
 
     Rule('~function_return~',
-         ct(['return ', '~expression~']),
+         ct(['return', '~expression~']),
          FunctionReturnDGN),
 
     Rule('~var_declaration~',
