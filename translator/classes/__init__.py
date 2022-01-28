@@ -100,7 +100,7 @@ class IdentifierNextDGN(DGN):
         self.next = None
         if not self.is_one_letter:
             self.next = rule_manager.create_next_rule_instance()
-            self.symbol = rule_manager.create_next_rule_instance()
+        self.symbol = rule_manager.create_next_rule_instance()
 
     def check(self):
         pass
@@ -110,8 +110,8 @@ class IdentifierNextDGN(DGN):
 
     def reduce(self):
         if self.is_one_letter:
-            return self.symbol.value
-        return self.symbol.value + self.next.reduce()
+            return self.symbol.letter_instance.value
+        return self.symbol.letter_instance.value + self.next.reduce()
 
 
 class DigitDGN(DGN):
@@ -142,6 +142,8 @@ class MainFunctionDGN(DGN):
         generator_manager.increase_tabs()
         if self.has_body:
             self.function_body.generate()
+        generator_manager.println()
+        generator_manager.println('return 0;')
         generator_manager.decrease_tabs()
         generator_manager.println('}')
 
@@ -315,7 +317,7 @@ class AdditionSignDGN(DGN):
 
 
 class MultiplicationSignDGN(DGN):
-    def __init__(self, what):
+    def __init__(self):
         super().__init__()
         self.operator = str(rule_manager.get_current_rule().rhs[0])
 
@@ -565,7 +567,7 @@ class TypeDGN(DGN):
 class ValuableTypeDGN(DGN):
     def __init__(self):
         super().__init__()
-        self.value = str(rule_manager.get_current_rule().rhs[0])
+        self.value = str(''.join(rule_manager.get_current_rule().rhs))
 
     def check(self):
         pass
