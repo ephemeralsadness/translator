@@ -549,14 +549,14 @@ java_rules = [
          has_body=True
          ),
     Rule('~cycle~',
-         ct(['for', '(', '~var_declaration~', ';', '~logical_expression~', ';', '~assignment~', ')' '{', '~code_field~',
+         ct(['for', '(', '~var_declaration~', ';', '~logical_expression~', ';', '~assignment~', ')' ,'{', '~code_field~',
              '}']),
          ForDGN,
          is_initialization=True,
          has_body=True
          ),
     Rule('~cycle~',
-         ct(['for', '(', '~assignment~', ';', '~logical_expression~', ';', '~assignment~', ')' '{', '~code_field~',
+         ct(['for', '(', '~assignment~', ';', '~logical_expression~', ';', '~assignment~', ')' ,'{', '~code_field~',
              '}']),
          ForDGN,
          is_initialization=False,
@@ -573,14 +573,14 @@ java_rules = [
          has_body=True
          ),
     Rule('~cycle~',
-         ct(['for', '(', '~var_declaration~', ';', '~logical_expression~', ';', '~assignment~', ')' '{',
+         ct(['for', '(', '~var_declaration~', ';', '~logical_expression~', ';', '~assignment~', ')', '{',
              '}']),
          ForDGN,
          is_initialization=True,
          has_body=False
          ),
     Rule('~cycle~',
-         ct(['for', '(', '~assignment~', ';', '~logical_expression~', ';', '~assignment~', ')' '{',
+         ct(['for', '(', '~assignment~', ';', '~logical_expression~', ';', '~assignment~', ')' ,'{',
              '}']),
          ForDGN,
          is_initialization=False,
