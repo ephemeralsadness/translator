@@ -121,7 +121,7 @@ def to_lr(item):
 
 
 def make_right_parsing(whitespace_tokens):
-    start_rule = '~program\\'
+    start_rule = '~program~'
     terminals = set(string.digits + string.ascii_letters + string.whitespace + '_(){}[]+-*/%><=!&|;,"\'.#@№$^:?')
 
     grammar = Grammar(java_rules, start_rule)

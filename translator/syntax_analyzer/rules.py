@@ -4,7 +4,7 @@ from translator.constants import *
 
 
 class Rule(object):
-    def __init__(self, lhs, rhs, cls, **kwargs):
+    def __init__(self, lhs, rhs, cls=None, **kwargs):
         self.lhs = lhs
         self.rhs = rhs
         self.cls = cls
@@ -18,9 +18,17 @@ def ct(a):
     b = []
     for x in a:
         b.append(x)
-        b.append('`')
+        b.append(' ')
     b.pop(len(b) - 1)
-    return b
+    c = []
+    for x in b:
+        if x == '`':
+            c.append(x)
+        elif '~' in x:
+            c.append(x)
+        else:
+            c += list(x)
+    return c
 
 
 java_rules = [
@@ -75,12 +83,15 @@ java_rules = [
     Rule('~main_function~',
          ct(['public', 'static', 'void', 'main', '(', 'String', '[', ']', 'args', ')', '{', '~function_body~', '}']),
          ),
+    Rule('~main_function~',
+         ct(['public', 'static', 'void', 'main', '(', 'String', '[', ']', 'args', ')', '{', '}']),
+         ),
 
     Rule('~code_field~',
          ct(['~instruction~', '~code_field~']),
          ),
     Rule('~code_field~',
-         [],
+         ct(['~instruction~']),
          ),
 
     Rule('~instruction~',
@@ -105,13 +116,13 @@ java_rules = [
          ct(['~function_return~', ';']),
          ),
 
-    Rule('~assignment',
+    Rule('~assignment~',
          ct(['~identifier~', '~operator_assignment~', '~expression~']),
          ),
 
     *[
         Rule('~operator_assignment~',
-             [i],
+             ct([i]),
              )
         for i in ASSIGNMENT_OPERATORS
     ],
@@ -155,13 +166,7 @@ java_rules = [
          ),
 
     Rule('~math_expression~',
-         ['~real_number~'],
-         ),
-    Rule('~math_expression~',
-         ['~identifier~'],
-         ),
-    Rule('~math_expression~',
-         ['~identifier~'],
+         ['~number~'],
          ),
     Rule('~math_expression~',
          ['~identifier~'],
@@ -174,6 +179,9 @@ java_rules = [
          ),
     Rule('~math_expression~',
          ct(['~math_expression~', '~multiplication_sign~', '~math_expression~']),
+         ),
+    Rule('~math_expression~',
+         ct(['(', '~math_expression~', ')']),
          ),
     Rule('~math_expression~',
          ['-', '~math_expression~'],
@@ -212,8 +220,8 @@ java_rules = [
          ),
 
     *[
-        Rule('~multiplication_sign~',
-             [i],
+        Rule('~compare_operator~',
+             ct([i]),
              )
         for i in COMPARISON_OPERATORS
     ],
@@ -244,10 +252,22 @@ java_rules = [
     Rule('~if_operator~',
          ct(['if', '(', '~expression~', ')' '{', '~code_field~', '}', 'else', '{', '~if_operator~', '}']),
          ),
+    Rule('~if_operator~',
+         ct(['if', '(', '~expression~', ')' '{', '}']),
+         ),
+    Rule('~if_operator~',
+         ct(['if', '(', '~expression~', ')' '{', '}', 'else', '{', '~code_field~', '}']),
+         ),
+    Rule('~if_operator~',
+         ct(['if', '(', '~expression~', ')' '{', '~code_field~', '}', 'else', '{', '}']),
+         ),
+    Rule('~if_operator~',
+         ct(['if', '(', '~expression~', ')' '{', '}', 'else', '{', '~if_operator~', '}']),
+         ),
 
     *[
         Rule('~boolean_value~',
-             [i],
+             ct([i]),
              )
         for i in ['true', 'false']
     ],
@@ -260,12 +280,36 @@ java_rules = [
          ct(['static', '~function_return_type~', '~identifier~',
              '(', '~function_params~', ')', '(', '~function_body~', ')']),
          ),
+    Rule('~functions_declaration~',
+         ct(['static', '~function_type~', '~identifier~',
+             '(', ')', '(', '~function_body~', ')', '~functions_declaration~']),
+         ),
+    Rule('~functions_declaration~',
+         ct(['static', '~function_return_type~', '~identifier~',
+             '(', ')', '(', '~function_body~', ')']),
+         ),
+    Rule('~functions_declaration~',
+         ct(['static', '~function_type~', '~identifier~',
+             '(', '~function_params~', ')', '(', ')', '~functions_declaration~']),
+         ),
+    Rule('~functions_declaration~',
+         ct(['static', '~function_return_type~', '~identifier~',
+             '(', '~function_params~', ')', '(', ')']),
+         ),
+    Rule('~functions_declaration~',
+         ct(['static', '~function_type~', '~identifier~',
+             '(', ')', '(', ')', '~functions_declaration~']),
+         ),
+    Rule('~functions_declaration~',
+         ct(['static', '~function_return_type~', '~identifier~',
+             '(', ')', '(', ')']),
+         ),
 
     Rule('~function_return_type~',
          ['~type~'],
          ),
     Rule('~function_return_type~',
-         ['void'],
+         ct(['void']),
          ),
 
     Rule('~type~',
@@ -274,7 +318,7 @@ java_rules = [
 
     *[
         Rule('~valuable_type~',
-             [i],
+             ct([i]),
              )
         for i in VARIABLE_TYPES
     ],
@@ -284,9 +328,6 @@ java_rules = [
          ),
     Rule('~function_params~',
          ct(['~valuable_type~', '~identifier~', ',', '~function_params~']),
-         ),
-    Rule('~function_params~',
-         [],
          ),
 
     Rule('~function_body~',
@@ -307,12 +348,24 @@ java_rules = [
     Rule('~function_call~',
          ct(['~identifier~', '(', '~function_call_params~', ')'])
          ),
+    Rule('~function_call~',
+         ct(['~identifier~', '(', ')'])
+         ),
+    Rule('~function_call~',
+         ct(['System.out.println', '(', '~function_call_params~', ')'])
+         ),
+    Rule('~function_call~',
+         ct(['System.out.print', '(', '~function_call_params~', ')'])
+         ),
+    Rule('~function_call~',
+         ct(['Math.max', '(', '~function_call_params~', ')'])
+         ),
+    Rule('~function_call~',
+         ct(['Math.min', '(', '~function_call_params~', ')'])
+         ),
 
     Rule('~function_call_params~',
          ['~expression~'],
-         ),
-    Rule('~function_call_params~',
-         [],
          ),
     Rule('~function_call_params~',
          ct(['~expression~', ',', '~function_call_params~'])
@@ -332,20 +385,44 @@ java_rules = [
          ct(['for', '(', '~assignment~', ';', '~logical_expression~', ';', '~assignment~', ')' '{', '~code_field~',
              '}']),
          ),
+    Rule('~cycle~',
+         ct(['while', '(', '~logical_expression~', ')', '{', '}']),
+         ),
+    Rule('~cycle~',
+         ct(['do', '{', '}', 'while', '(', '~logical_expression~', ')', ';']),
+         ),
+    Rule('~cycle~',
+         ct(['for', '(', '~var_declaration~', ';', '~logical_expression~', ';', '~assignment~', ')' '{',
+             '}']),
+         ),
+    Rule('~cycle~',
+         ct(['for', '(', '~assignment~', ';', '~logical_expression~', ';', '~assignment~', ')' '{',
+             '}']),
+         ),
 
     Rule('~string_literal~',
          ['"', '~string_letters~', '"'],
          ),
     Rule('~string_literal~',
+         ['"', '"'],
+         ),
+
+    Rule('~string_letters~',
          ['~letter~', '~string_letters~'],
          ),
-    Rule('~string_literal~',
+    Rule('~string_letters~',
          ['~digit~', '~string_letters~'],
          ),
-    Rule('~string_literal~',
+    Rule('~string_letters~',
          ['~other_symb~', '~string_letters~'],
          ),
-    Rule('~string_literal~',
-         ['~string_letters~'],
+    Rule('~string_letters~',
+         ['~letter~'],
+         ),
+    Rule('~string_letters~',
+         ['~digit~'],
+         ),
+    Rule('~string_letters~',
+         ['~other_symb~'],
          ),
 ]
