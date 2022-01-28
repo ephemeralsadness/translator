@@ -69,9 +69,8 @@ class IdentifierDGN(DGN):
 
 
 class IdentifierStartDGN(DGN):
-    def __init__(self, value):
+    def __init__(self):
         super().__init__()
-        self.value = value
         self.letter_instance = rule_manager.create_next_rule_instance()
 
     def check(self):
