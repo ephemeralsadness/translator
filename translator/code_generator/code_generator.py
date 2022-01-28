@@ -18,8 +18,12 @@ class GeneratorManager:
 
     def decrease_tabs(self):
         if self.tabs == 0:
-            raise Exception('Compiler error: bad deacreasing tabs')
+            raise Exception('Compiler error: bad decreasing tabs')
         self.tabs -= 1
+
+    def get_code(self):
+        self.buffer_lines.append('\t' * self.tabs + self.line)
+        return '\n'.join(self.buffer_lines)
 
 
 generator_manager = GeneratorManager()

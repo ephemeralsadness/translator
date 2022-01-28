@@ -1,3 +1,4 @@
+from translator.code_generator.code_generator import generator_manager
 
 class CodeGenerator:
 
@@ -5,4 +6,5 @@ class CodeGenerator:
         ...
 
     def run(self, root):
-        return root.generate()
+        root.generate()
+        return generator_manager.get_code()
