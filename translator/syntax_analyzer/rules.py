@@ -1,3 +1,6 @@
+import string
+from translator.classes import *
+
 
 class Rule(object):
     def __init__(self, lhs, rhs, cls, **kwargs):
@@ -49,7 +52,7 @@ java_rules = [
     Rule('/function_type\\', ct(['void'])),
     Rule('/function_type\\', ct(['void'])),
 
-    *[Rule('/letter\\', [letter]) for letter in ascii_letters],
+    *[Rule('/letter\\', [letter]) for letter in string.ascii_letters],
     *[Rule('/digit\\', [str(i)]) for i in range(10)],
 
     Rule('/int_number\\', ['/digit\\', '/int_number\\']),
@@ -60,7 +63,7 @@ java_rules = [
     Rule('/number\\', ['/int_number']),
     Rule('/number\\', ['/float_number']),
 
-    *[Rule('/others\\', [letter]) for letter in others],
+    *[Rule('/others\\', [letter]) for letter in string.others],
 
     Rule('/letter_id\\', ['/letter\\']),
     Rule('/letter_id\\', ['_']),
