@@ -189,8 +189,13 @@ class AssignmentDGN(DGN):
         self.identifier = rule_manager.create_next_rule_instance()
 
     def check(self):
-        type = context_manager.type_of_variable(self.identifier.reduce())
-
+        idx = self.identifier.reduce()
+        var_type, is_init = context_manager.type_of_variable(idx)
+        if var_type is None:
+            raise Exception('Cannot assign value to undeclared variable "{}"'.format(idx))
+        self.expression.check()
+        # todo check operator for lhs and rhs types
+        # todo check expr type accordance to lhs
 
     def generate(self):
         self.identifier.generate()
@@ -206,7 +211,7 @@ class OperatorAssignmentDGN(DGN):
         self.operator = str(rule_manager.get_current_rule().rhs[0])
 
     def check(self):
-        ...
+        pass
 
     def generate(self):
         generator_manager.print(self.operator)
@@ -219,7 +224,7 @@ class ExpressionDGN(DGN):
         self.expression = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...
+        self.expression.check()
 
     def generate(self):
         self.expression.generate()
@@ -242,7 +247,7 @@ class LogicalExpressionDGN(DGN):
             self.lhs = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...
+        pass
 
     def generate(self):
         if self.what in ['math_comparison', 'symb_comparison']:
@@ -553,7 +558,10 @@ class ValuableTypeDGN(DGN):
         ...
 
     def generate(self):
-        generator_manager.print(self.value)
+        if self.value == 'boolean':
+            generator_manager.print('bool')
+        else:
+            generator_manager.print(self.value)
 
 
 class FunctionParamsDGN(DGN):
@@ -646,13 +654,31 @@ class FunctionCallDGN(DGN):
 
     def generate(self):
         if self.name is not None:
-            generator_manager.print(self.name)
+            if self.name == 'System.out.print':
+                generator_manager.print('std::cout << ')
+                if self.has_params:
+                    self.function_call_params.generate()
+            elif self.name == 'System.out.println':
+                generator_manager.print('std::cout << ')
+                if self.has_params:
+                    self.function_call_params.generate()
+                generator_manager.print(' << std::endl')
+            elif self.name == 'Math.max':
+                generator_manager.print('std::max(')
+                if self.has_params:
+                    self.function_call_params.generate()
+                generator_manager.print(')')
+            elif self.name == 'Math.min':
+                generator_manager.print('std::min(')
+                if self.has_params:
+                    self.function_call_params.generate()
+                generator_manager.print(')')
         else:
             self.function_identifier.generate()
-        generator_manager.print('(')
-        if self.has_params:
-            self.function_call_params.generate()
-        generator_manager.print(')')
+            generator_manager.print('(')
+            if self.has_params:
+                self.function_call_params.generate()
+            generator_manager.print(')')
 
 
 class FunctionCallParamsDGN(DGN):
