@@ -5,4 +5,5 @@ class SemanticAnalyzer:
         ...
 
     def run(self, root):
+        root.check()
         return root

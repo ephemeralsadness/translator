@@ -22,5 +22,12 @@ class ContextManager:
     def set_type_of_variable(self, var_name, var_type, is_inited):
         self.scopes[len(self.scopes) - 1][var_name] = (var_type, is_inited)
 
+    def make_function(self, name, args, return_type):
+        self.functions[name, args] = return_type
+
+    def get_function_return_type(self, name, args):
+        if (name, args) in self.functions:
+            return self.functions[name, args]
+
 
 context_manager = ContextManager()

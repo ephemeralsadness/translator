@@ -2,6 +2,8 @@ from translator.syntax_analyzer.tree import rule_manager
 from translator.code_generator.code_generator import generator_manager
 from translator.semantic_analyzer.context_manager import context_manager
 
+from translator.constants import KEYWORDS
+
 
 class DGN:
     def __init__(self):
@@ -37,7 +39,6 @@ class ProgramDGN(DGN):
         if self.functions:
             self.functions_declarations.generate()
         self.main_function.generate()
-        generator_manager.println()
 
 
 class IdentifierDGN(DGN):
@@ -50,7 +51,13 @@ class IdentifierDGN(DGN):
         self.value = None
 
     def check(self):
-        pass
+        var_type, is_init = context_manager.type_of_variable(self.reduce())
+        if self.reduce() in KEYWORDS:
+            raise Exception('Wrong variable name: reserved keyword "{}"'.format(self.reduce()))
+        if var_type is None:
+            raise Exception('Variable "{}" has not been declared'.format(self.reduce()))
+        if not is_init:
+            raise Exception('Variable "{}" has not been initialized before using'.format(var_type))
 
     def generate(self):
         self.value = self.reduce()
@@ -66,6 +73,10 @@ class IdentifierDGN(DGN):
             memo = self.identifier_start.letter_instance.value + self.identifier_next.reduce()
         self.value = memo
         return self.value
+
+    def type(self):
+        var_type, is_init = context_manager.type_of_variable(self.reduce())
+        return 'number' if var_type in ['float', 'double', 'int'] else var_type
 
 
 class IdentifierStartDGN(DGN):
@@ -83,7 +94,7 @@ class IdentifierStartDGN(DGN):
 class LetterDGN(DGN):
     def __init__(self):
         super().__init__()
-        self.value = str(rule_manager.get_current_rule().rhs[0])
+        self.value = str(''.join(rule_manager.get_current_rule().rhs))
 
     def check(self):
         pass
@@ -117,7 +128,7 @@ class IdentifierNextDGN(DGN):
 class DigitDGN(DGN):
     def __init__(self):
         super().__init__()
-        self.value = str(rule_manager.get_current_rule().rhs[0])
+        self.value = str(''.join(rule_manager.get_current_rule().rhs))
 
     def check(self):
         pass
@@ -135,7 +146,9 @@ class MainFunctionDGN(DGN):
 
     def check(self):
         if self.has_body:
+            context_manager.push_scope()
             self.function_body.check()
+            context_manager.pop_scope()
 
     def generate(self):
         generator_manager.println('int main() {')
@@ -195,9 +208,12 @@ class AssignmentDGN(DGN):
         var_type, is_init = context_manager.type_of_variable(idx)
         if var_type is None:
             raise Exception('Cannot assign value to undeclared variable "{}"'.format(idx))
+        # expression_type = self.expression.type()
+        # if var_type not in self.expression.type():
+        #     raise Exception('Cannot assign value to variable "{}": wrong types {} and {}'.format(
+        #         idx, var_type, expression_type
+        #     ))
         self.expression.check()
-        # todo check operator for lhs and rhs types
-        # todo check expr type accordance to lhs
 
     def generate(self):
         self.identifier.generate()
@@ -210,7 +226,7 @@ class AssignmentDGN(DGN):
 class OperatorAssignmentDGN(DGN):
     def __init__(self):
         super().__init__()
-        self.operator = str(rule_manager.get_current_rule().rhs[0])
+        self.operator = str(''.join(rule_manager.get_current_rule().rhs))
 
     def check(self):
         pass
@@ -231,6 +247,9 @@ class ExpressionDGN(DGN):
     def generate(self):
         self.expression.generate()
 
+    def type(self):
+        return self.expression.type()
+
 
 class LogicalExpressionDGN(DGN):
     def __init__(self, what):
@@ -249,7 +268,13 @@ class LogicalExpressionDGN(DGN):
             self.lhs = rule_manager.create_next_rule_instance()
 
     def check(self):
-        pass
+        if self.what in ['math_comparison', 'symb_comparison', '&&', '||']:
+            self.lhs.check()
+            self.rhs.check()
+        if self.what == 'boolean_value':
+            self.boolean_value.check()
+        if self.what == 'braced':
+            self.expression.check()
 
     def generate(self):
         if self.what in ['math_comparison', 'symb_comparison']:
@@ -269,6 +294,9 @@ class LogicalExpressionDGN(DGN):
             generator_manager.print(' ' + self.what + ' ')
             self.rhs.generate()
 
+    def type(self):
+        return 'boolean'
+
 
 class MathExpressionDGN(DGN):
     def __init__(self, what):
@@ -284,7 +312,11 @@ class MathExpressionDGN(DGN):
 
     def check(self):
         # todo check math expression identifiers to be numbers
-        pass
+        if self.what in ['+', '-', '*', '/', '%']:
+            self.lhs.check()
+            self.rhs.check()
+        else:
+            self.value.check()
 
     def generate(self):
         if self.what in ['+', '-', '*', '/', '%']:
@@ -303,11 +335,14 @@ class MathExpressionDGN(DGN):
         else:
             self.value.generate()
 
+    def type(self):
+        return 'number'
+
 
 class AdditionSignDGN(DGN):
     def __init__(self):
         super().__init__()
-        self.operator = str(rule_manager.get_current_rule().rhs[0])
+        self.operator = str(''.join(rule_manager.get_current_rule().rhs))
 
     def check(self):
         pass
@@ -319,7 +354,7 @@ class AdditionSignDGN(DGN):
 class MultiplicationSignDGN(DGN):
     def __init__(self):
         super().__init__()
-        self.operator = str(rule_manager.get_current_rule().rhs[0])
+        self.operator = str(''.join(rule_manager.get_current_rule().rhs))
 
     def check(self):
         pass
@@ -387,7 +422,7 @@ class RealNumberDGN(DGN):
 class CompareOperatorDGN(DGN):
     def __init__(self):
         super().__init__()
-        self.operator = str(rule_manager.get_current_rule().rhs[0])
+        self.operator = str(''.join(rule_manager.get_current_rule().rhs))
 
     def check(self):
         pass
@@ -409,11 +444,14 @@ class SymbValueDGN(DGN):
         generator_manager.print(self.symbol.value)
         generator_manager.print('\'')
 
+    def type(self):
+        return 'char'
+
 
 class OtherSymbDGN(DGN):
     def __init__(self):
         super().__init__()
-        self.value = str(rule_manager.get_current_rule().rhs[0])
+        self.value = str(''.join(rule_manager.get_current_rule().rhs))
 
     def check(self):
         pass
@@ -439,13 +477,16 @@ class IfOperatorDGN(DGN):
         self.expression = rule_manager.create_next_rule_instance()
 
     def check(self):
-        # todo make scopes
+        if not self.has_empty_if_body:
+            context_manager.push_scope()
+            self.if_code_field.check()
+            context_manager.pop_scope()
         if self.what == 'if-else' and (not self.has_empty_else_body):
+            context_manager.push_scope()
             self.else_code_field.check()
+            context_manager.pop_scope()
         if self.what == 'if-else-if':
             self.else_if.check()
-        if not self.has_empty_if_body:
-            self.if_code_field.check()
 
     def generate(self):
         generator_manager.print('if (')
@@ -472,7 +513,7 @@ class IfOperatorDGN(DGN):
 class BooleanValueDGN(DGN):
     def __init__(self):
         super().__init__()
-        self.symbol = str(rule_manager.get_current_rule().rhs[0])
+        self.symbol = str(''.join(rule_manager.get_current_rule().rhs))
 
     def check(self):
         pass
@@ -498,13 +539,16 @@ class FunctionsDeclarationDGN(DGN):
 
     def check(self):
         # todo check if function returns correct type expression
+        # todo add to current scope function params
         if self.multiple_declarations:
             self.function_declarations.check()
         if self.has_body:
+            context_manager.push_scope()
+            if self.has_params:
+                pass
             self.function_body.check()
-        if self.has_params:
-            pass
-            # todo add to current scope function params
+            context_manager.pop_scope()
+
 
     def generate(self):
         generator_manager.print('static ')
@@ -591,7 +635,9 @@ class FunctionParamsDGN(DGN):
         self.value = None
 
     def check(self):
-        pass  # todo add to scope
+        context_manager.set_type_of_variable(self.identifier.reduce(), self.valuable_type.value, True)
+        if self.is_multiple:
+            self.function_params.check()
 
     def generate(self):
         self.valuable_type.generate()
@@ -612,9 +658,7 @@ class FunctionBodyDGN(DGN):
         self.code_field = rule_manager.create_next_rule_instance()
 
     def check(self):
-        context_manager.push_scope()
         self.code_field.check()
-        context_manager.pop_scope()
 
     def generate(self):
         self.code_field.generate()
@@ -643,8 +687,10 @@ class VarDeclarationDGN(DGN):
         self.valuable_type = rule_manager.create_next_rule_instance()
 
     def check(self):
-        pass
-        # todo check if var is already declared
+        var_type, is_init = context_manager.type_of_variable(self.identifier.reduce())
+        if var_type is not None:
+            raise Exception('Multiple declaration of variable {}'.format(self.identifier))
+        context_manager.set_type_of_variable(self.identifier.reduce(), self.valuable_type.value, self.is_initialized)
 
     def generate(self):
         self.valuable_type.generate()
@@ -666,7 +712,11 @@ class FunctionCallDGN(DGN):
             self.function_identifier = rule_manager.create_next_rule_instance()
 
     def check(self):
-        pass  # todo check params to function signature
+        if self.has_params:
+            self.function_call_params.check()
+        if self.name is None:
+            self.function_identifier.check()
+        # todo check params to function signature
 
     def generate(self):
         if self.name is not None:
@@ -696,6 +746,9 @@ class FunctionCallDGN(DGN):
                 self.function_call_params.generate()
             generator_manager.print(')')
 
+    def type(self):
+        return context_manager.get_function_return_type()
+
 
 class FunctionCallParamsDGN(DGN):
     def __init__(self, is_multiple):
@@ -706,7 +759,10 @@ class FunctionCallParamsDGN(DGN):
         self.expression = rule_manager.create_next_rule_instance()
 
     def check(self):
-        pass  # todo check all expr are declared
+        if self.is_multiple:
+            self.function_call_params.check()
+        self.expression.check()
+        # todo check all expr are declared
 
     def generate(self):
         self.expression.generate()
@@ -724,7 +780,11 @@ class WhileDGN(DGN):
         self.expression = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...  # todo check
+        self.expression.check()
+        context_manager.push_scope()
+        if self.has_body:
+            self.code_field.check()
+        context_manager.pop_scope()
 
     def generate(self):
         generator_manager.print('while (')
@@ -746,7 +806,11 @@ class DoWhileDGN(DGN):
             self.code_field = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...  # todo check
+        self.expression.check()
+        context_manager.push_scope()
+        if self.has_body:
+            self.code_field.check()
+        context_manager.pop_scope()
 
     def generate(self):
         generator_manager.print('do {')
@@ -771,7 +835,13 @@ class ForDGN(DGN):
         self.assignment = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...  # todo check
+        context_manager.push_scope()
+        self.move_assignment.check()
+        self.logical_expression.check()
+        self.assignment.check()
+        if self.has_body:
+            self.code_field.check()
+        context_manager.pop_scope()
 
     def generate(self):
         generator_manager.print('for (')
