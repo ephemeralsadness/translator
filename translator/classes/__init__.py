@@ -625,6 +625,9 @@ class TypeDGN(DGN):
     def type(self):
         return self.valuable_type.type()
 
+    def type(self):
+        return self.valuable_type.type()
+
 
 class ValuableTypeDGN(DGN):
     def __init__(self):
@@ -696,7 +699,7 @@ class FunctionReturnDGN(DGN):
         pass
 
     def generate(self):
-        generator_manager.println('return ')
+        generator_manager.print('return ')
         self.expression.generate()
 
 
