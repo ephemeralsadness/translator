@@ -1,5 +1,6 @@
 from copy import deepcopy
 
+
 class RuleManager:
     def __init__(self):
         self.rules = []

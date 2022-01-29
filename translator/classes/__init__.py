@@ -866,9 +866,9 @@ class ForDGN(DGN):
 
     def check(self):
         context_manager.push_scope()
+        self.assignment.check()
         self.move_assignment.check()
         self.logical_expression.check()
-        self.assignment.check()
         if self.has_body:
             self.code_field.check()
         context_manager.pop_scope()
