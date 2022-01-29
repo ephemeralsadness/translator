@@ -375,6 +375,9 @@ class NumberDGN(DGN):
     def generate(self):
         self.value.generate()
 
+    def type(self):
+        return 'number'
+
 
 class IntegerDGN(DGN):
     def __init__(self, is_one_digit):
@@ -399,6 +402,9 @@ class IntegerDGN(DGN):
             return self.digit.value
         return self.digit.value + self.integer.reduce()
 
+    def type(self):
+        return 'number'
+
 
 class RealNumberDGN(DGN):
     def __init__(self):
@@ -417,6 +423,9 @@ class RealNumberDGN(DGN):
         if self.value is not None:
             return self.value
         self.value = self.lhs.generate() + '.' + self.rhs.generate()
+
+    def type(self):
+        return 'number'
 
 
 class CompareOperatorDGN(DGN):
@@ -521,6 +530,9 @@ class BooleanValueDGN(DGN):
     def generate(self):
         generator_manager.print(self.symbol)
 
+    def type(self):
+        return 'boolean'
+
 
 class FunctionsDeclarationDGN(DGN):
     def __init__(self, multiple_declarations, has_params, has_body):
@@ -542,13 +554,14 @@ class FunctionsDeclarationDGN(DGN):
         # todo add to current scope function params
         if self.multiple_declarations:
             self.function_declarations.check()
-        if self.has_body:
-            context_manager.push_scope()
-            if self.has_params:
-                pass
-            self.function_body.check()
-            context_manager.pop_scope()
 
+        context_manager.push_scope()
+        if self.has_params:
+            self.function_params.check()
+        if self.has_body:
+            pass
+        self.function_body.check()
+        context_manager.pop_scope()
 
     def generate(self):
         generator_manager.print('static ')
@@ -588,6 +601,7 @@ class FunctionReturnTypeDGN(DGN):
         if self.value is not None:
             return self.value
         self.value = ('void' if self.is_void else self.return_type.reduce())
+        return self.value
 
 
 class TypeDGN(DGN):
@@ -607,6 +621,9 @@ class TypeDGN(DGN):
             return self.value
         self.value = self.valuable_type.value
 
+    def type(self):
+        return self.valuable_type.type()
+
 
 class ValuableTypeDGN(DGN):
     def __init__(self):
@@ -621,6 +638,11 @@ class ValuableTypeDGN(DGN):
             generator_manager.print('bool')
         else:
             generator_manager.print(self.value)
+
+    def type(self):
+        if self.value in ['float', 'double', 'int']:
+            return 'number'
+        return self.value
 
 
 class FunctionParamsDGN(DGN):

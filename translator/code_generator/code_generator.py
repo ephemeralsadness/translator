@@ -6,7 +6,7 @@ class GeneratorManager:
         self.tabs = 0
 
     def print(self, s):
-        self.line += s
+        self.line += str(s)
 
     def println(self, s=''):
         self.line += s
