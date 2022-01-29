@@ -23,11 +23,12 @@ class ContextManager:
         self.scopes[len(self.scopes) - 1][var_name] = (var_type, is_inited)
 
     def make_function(self, name, args, return_type):
-        self.functions[name, args] = return_type
+        self.functions[name + '(' + ', '.join(args) + ')'] = return_type, args
 
     def get_function_return_type(self, name, args):
-        if (name, args) in self.functions:
-            return self.functions[name, args]
+        better_name = name + '(' + ', '.join(args) + ')'
+        if better_name in self.functions:
+            return self.functions[better_name]
 
 
 context_manager = ContextManager()

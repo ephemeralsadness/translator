@@ -741,10 +741,11 @@ class FunctionCallDGN(DGN):
             self.function_identifier = rule_manager.create_next_rule_instance()
 
     def check(self):
-        if self.has_params:
-            self.function_call_params.check()
-        if self.name is None:
-            self.function_identifier.check()
+        pass
+        # if self.has_params:
+        #     self.function_call_params.check()
+        # if self.name is None:
+        #     self.function_identifier.check()
         # todo check params to function signature
 
     def generate(self):
