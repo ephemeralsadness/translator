@@ -138,6 +138,13 @@ def make_right_parsing(whitespace_tokens):
             last = item
             break
     else:
-        raise Exception('Incorrect sentence')
+        index = 0
+        for i, list in enumerate(earley_set):
+            if len(list) == 0:
+                index = i
+                break
+        first_line = whitespace_tokens[index-10:index+10]+'\n'
+        second_line = ' '*7 + '^^^^' + ' '*9
+        raise Exception('Incorrect sentence, symb # {}\n'.format(index)+first_line+second_line)
 
     return to_lr(last)
