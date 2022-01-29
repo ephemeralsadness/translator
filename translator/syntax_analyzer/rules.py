@@ -345,7 +345,7 @@ java_rules = [
          has_empty_else_body=False
          ),
     Rule('~if_operator~',
-         ct(['if', '(', '~logical_expression~', ')' '{', '}', 'else', '{', '~code_field~', '}']),
+         ct(['if', '(', '~logical_expression~', ')', '{', '}', 'else', '{', '~code_field~', '}']),
          IfOperatorDGN,
          what='if-else',
          has_empty_if_body=True,
