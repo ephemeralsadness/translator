@@ -83,6 +83,7 @@ class IdentifierStartDGN(DGN):
     def __init__(self):
         super().__init__()
         self.letter_instance = rule_manager.create_next_rule_instance()
+        self.value = self.letter_instance.value
 
     def check(self):
         pass
@@ -121,8 +122,8 @@ class IdentifierNextDGN(DGN):
 
     def reduce(self):
         if self.is_one_letter:
-            return self.symbol.letter_instance.value
-        return self.symbol.letter_instance.value + self.next.reduce()
+            return self.symbol.value
+        return self.symbol.value + self.next.reduce()
 
 
 class DigitDGN(DGN):
