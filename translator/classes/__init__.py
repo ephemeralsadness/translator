@@ -418,11 +418,14 @@ class RealNumberDGN(DGN):
 
     def generate(self):
         self.value = self.reduce()
+        generator_manager.print(self.value)
 
     def reduce(self):
         if self.value is not None:
             return self.value
-        self.value = self.lhs.generate() + '.' + self.rhs.generate()
+        a = self.lhs.reduce()
+        b = self.rhs.reduce()
+        return a + '.' + b
 
     def type(self):
         return 'number'
@@ -899,6 +902,9 @@ class StringLiteralDGN(DGN):
         if self.is_not_empty:
             self.letters.generate()
         generator_manager.print('"')
+
+    def type(self):
+        return 'String'
 
 
 class StringLettersDGN(DGN):
