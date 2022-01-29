@@ -625,6 +625,9 @@ class TypeDGN(DGN):
     def type(self):
         return self.valuable_type.type()
 
+    def type(self):
+        return self.valuable_type.type()
+
 
 class ValuableTypeDGN(DGN):
     def __init__(self):
