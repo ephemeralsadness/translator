@@ -35,25 +35,20 @@ java_rules = [
     Rule('~program~',
          ct(['class', '~identifier~', '{', '~main_function~', '}']),
          ProgramDGN,
-         functions=False),
+         has_functions=False),
     Rule('~program~',
          ct(['class', '~identifier~', '{', '~functions_declaration~', '~main_function~', '}']),
          ProgramDGN,
-         functions=True),
+         has_functions=True),
 
     Rule('~identifier~',
-         ['~identifier_start~'],
+         ['~letter~'],
          IdentifierDGN,
          is_one_letter=True),
     Rule('~identifier~',
-         ['~identifier_start~', '~identifier_next~'],
+         ['~letter~', '~identifier_next~'],
          IdentifierDGN,
          is_one_letter=False),
-
-    Rule('~identifier_start~',
-         ['~letter~'],
-         IdentifierStartDGN,
-         ),
 
     *[
         Rule('~letter~',
@@ -64,27 +59,27 @@ java_rules = [
     ],
 
     Rule('~identifier_next~',
-         ['~identifier_start~', '~identifier_next~'],
+         ['~letter~', '~identifier_next~'],
          IdentifierNextDGN,
-         is_digit=False,
-         is_one_letter=False),
+         starts_with_digit=False,
+         is_multiple=True),
     Rule('~identifier_next~',
          ['~digit~', '~identifier_next~'],
          IdentifierNextDGN,
-         is_digit=False,
-         is_one_letter=False
+         starts_with_digit=True,
+         is_multiple=True
          ),
     Rule('~identifier_next~',
-         ['~identifier_start~'],
+         ['~letter~'],
          IdentifierNextDGN,
-         is_digit=False,
-         is_one_letter=True
+         starts_with_digit=False,
+         is_multiple=False
          ),
     Rule('~identifier_next~',
          ['~digit~'],
          IdentifierNextDGN,
-         is_digit=True,
-         is_one_letter=False
+         starts_with_digit=True,
+         is_multiple=False
          ),
 
     *[
@@ -95,7 +90,7 @@ java_rules = [
     ],
 
     Rule('~main_function~',
-         ct(['public', 'static', 'void', 'main', '(', 'String', '[', ']', 'args', ')', '{', '~function_body~', '}']),
+         ct(['public', 'static', 'void', 'main', '(', 'String', '[', ']', 'args', ')', '{', '~code_field~', '}']),
          MainFunctionDGN,
          has_body=True),
     Rule('~main_function~',
@@ -107,11 +102,11 @@ java_rules = [
     Rule('~code_field~',
          ct(['~instruction~', '~code_field~']),
          CodeFieldDGN,
-         has_code_field=True),
+         is_multiple=True),
     Rule('~code_field~',
          ct(['~instruction~']),
          CodeFieldDGN,
-         has_code_field=False
+         is_multiple=False
          ),
 
     Rule('~instruction~',
@@ -282,11 +277,11 @@ java_rules = [
     Rule('~integer~',
          ['~digit~', '~integer~'],
          IntegerDGN,
-         is_one_digit=False),
+         is_multiple=True),
     Rule('~integer~',
          ['~digit~'],
          IntegerDGN,
-         is_one_digit=True
+         is_multiple=False
          ),
 
     Rule('~real_number~',
@@ -382,14 +377,14 @@ java_rules = [
 
     Rule('~functions_declaration~',
          ct(['static', '~function_return_type~', '~identifier~',
-             '(', '~function_params~', ')', '{', '~function_body~', '}', '~functions_declaration~']),
+             '(', '~function_params~', ')', '{', '~code_field~', '}', '~functions_declaration~']),
          FunctionsDeclarationDGN,
          multiple_declarations=True,
          has_params=True,
          has_body=True),
     Rule('~functions_declaration~',
          ct(['static', '~function_return_type~', '~identifier~',
-             '(', '~function_params~', ')', '{', '~function_body~', '}']),
+             '(', '~function_params~', ')', '{', '~code_field~', '}']),
          FunctionsDeclarationDGN,
          multiple_declarations=False,
          has_params=True,
@@ -397,7 +392,7 @@ java_rules = [
          ),
     Rule('~functions_declaration~',
          ct(['static', '~function_return_type~', '~identifier~',
-             '(', ')', '{', '~function_body~', '}', '~functions_declaration~']),
+             '(', ')', '{', '~code_field~', '}', '~functions_declaration~']),
          FunctionsDeclarationDGN,
          multiple_declarations=True,
          has_params=False,
@@ -405,7 +400,7 @@ java_rules = [
          ),
     Rule('~functions_declaration~',
          ct(['static', '~function_return_type~', '~identifier~',
-             '(', ')', '{', '~function_body~', '}']),
+             '(', ')', '{', '~code_field~', '}']),
          FunctionsDeclarationDGN,
          multiple_declarations=False,
          has_params=False,
@@ -454,43 +449,35 @@ java_rules = [
          is_void=True
          ),
 
-    Rule('~type~',
-         ['~valuable_type~'],
-         TypeDGN),
-
     *[
-        Rule('~valuable_type~',
+        Rule('~type~',
              ct([i]),
-             ValuableTypeDGN)
+             TypeDGN)
         for i in VARIABLE_TYPES
     ],
 
     Rule('~function_params~',
-         ct(['~valuable_type~', '~identifier~']),
+         ct(['~type~', '~identifier~']),
          FunctionParamsDGN,
          is_multiple=False),
     Rule('~function_params~',
-         ct(['~valuable_type~', '~identifier~', ',', '~function_params~']),
+         ct(['~type~', '~identifier~', ',', '~function_params~']),
          FunctionParamsDGN,
          is_multiple=True
          ),
-
-    Rule('~function_body~',
-         ['~code_field~'],
-         FunctionBodyDGN),
 
     Rule('~function_return~',
          ct(['return', '~expression~']),
          FunctionReturnDGN),
 
     Rule('~var_declaration~',
-         ct(['~valuable_type~', '~identifier~']),
+         ct(['~type~', '~identifier~']),
          VarDeclarationDGN,
-         is_initialized=False),
+         is_init=False),
     Rule('~var_declaration~',
-         ct(['~valuable_type~', '~identifier~', '=', '~expression~']),
+         ct(['~type~', '~identifier~', '=', '~expression~']),
          VarDeclarationDGN,
-         is_initialized=True
+         is_init=True
             ),
 
     Rule('~function_call~',

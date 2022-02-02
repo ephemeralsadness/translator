@@ -2,8 +2,6 @@ from translator.syntax_analyzer.tree import rule_manager
 from translator.code_generator.code_generator import generator_manager
 from translator.semantic_analyzer.context_manager import context_manager
 
-from translator.constants import KEYWORDS
-
 
 class DGN:
     def __init__(self):
@@ -15,87 +13,71 @@ class DGN:
     def generate(self):
         ...
 
+    def type(self):
+        return None
+
 
 class ProgramDGN(DGN):
-    def __init__(self, functions):
+    def __init__(self, has_functions):
         super().__init__()
-        self.functions = functions
         self.main_function = rule_manager.create_next_rule_instance()
-        self.functions_declarations = None
-        if self.functions:
-            self.functions_declarations = rule_manager.create_next_rule_instance()
-        self.identifier = rule_manager.create_next_rule_instance()
+
+        has_functions = has_functions
+        self.functions = None
+        if has_functions:
+            self.functions = rule_manager.create_next_rule_instance()
+
+        self.class_name = rule_manager.create_next_rule_instance()
 
     def check(self):
-        if self.functions:
-            self.functions_declarations.check()
+        context_manager.push_scope()
+        context_manager.create_variable(self.class_name, 'class_name', False)
+        if self.functions is not None:
+            self.functions.check()
+        context_manager.push_scope()
         self.main_function.check()
+        context_manager.pop_scope()
 
     def generate(self):
         generator_manager.println('#include <iostream>')
         generator_manager.println('#include <algorithm>')
         generator_manager.println('#include <string>')
         generator_manager.println()
-        if self.functions:
-            self.functions_declarations.generate()
+        if self.functions is not None:
+            self.functions.generate()
         self.main_function.generate()
+
+    def type(self):
+        return 'class_name'
 
 
 class IdentifierDGN(DGN):
     def __init__(self, is_one_letter):
         super().__init__()
-        self.is_one_letter = is_one_letter
-        if not self.is_one_letter:
-            self.identifier_next = rule_manager.create_next_rule_instance()
-        self.identifier_start = rule_manager.create_next_rule_instance()
-        self.value = None
+        is_one_letter = is_one_letter
+        identifier_next = ''
+        if not is_one_letter:
+            identifier_next = rule_manager.create_next_rule_instance().value
+        self.value = rule_manager.create_next_rule_instance().value + identifier_next
 
     def check(self):
-        var_type, is_init = context_manager.type_of_variable(self.reduce())
-        if self.reduce() in KEYWORDS:
-            raise Exception('Wrong variable name: reserved keyword "{}"'.format(self.reduce()))
-        if var_type is None:
-            raise Exception('Variable "{}" has not been declared'.format(self.reduce()))
-        if not is_init:
-            raise Exception('Variable "{}" has not been initialized before using'.format(var_type))
+        var = context_manager.get_variable(self.value)
+        if var is None:
+            raise Exception('Variable "{}" has not been declared'.format(self.value))
+        if not var.is_init:
+            raise Exception('Variable "{}" has not been initialized before using'.format(self.value))
 
     def generate(self):
-        self.value = self.reduce()
         generator_manager.print(self.value)
 
-    def reduce(self):
-        if self.value is not None:
-            return self.value
-        memo = None
-        if self.is_one_letter:
-            memo = self.identifier_start.letter_instance.value
-        else:
-            memo = self.identifier_start.letter_instance.value + self.identifier_next.reduce()
-        self.value = memo
-        return self.value
-
     def type(self):
-        var_type, is_init = context_manager.type_of_variable(self.reduce())
-        return 'number' if var_type in ['float', 'double', 'int'] else var_type
-
-
-class IdentifierStartDGN(DGN):
-    def __init__(self):
-        super().__init__()
-        self.letter_instance = rule_manager.create_next_rule_instance()
-        self.value = self.letter_instance.value
-
-    def check(self):
-        pass
-
-    def generate(self):
-        pass
+        return context_manager.get_variable(self.value).var_type
 
 
 class LetterDGN(DGN):
     def __init__(self):
         super().__init__()
-        self.value = str(''.join(rule_manager.get_current_rule().rhs))
+        self.value = str(rule_manager.get_current_rule().rhs[0])
 
     def check(self):
         pass
@@ -105,14 +87,12 @@ class LetterDGN(DGN):
 
 
 class IdentifierNextDGN(DGN):
-    def __init__(self, is_digit, is_one_letter):
+    def __init__(self, starts_with_digit, is_multiple):
         super().__init__()
-        self.is_one_letter = is_one_letter
-        self.is_digit = is_digit
-        self.next = None
-        if not self.is_one_letter:
-            self.next = rule_manager.create_next_rule_instance()
-        self.symbol = rule_manager.create_next_rule_instance()
+        next_value = ''
+        if is_multiple:
+            next_value = rule_manager.create_next_rule_instance().value
+        self.value = rule_manager.create_next_rule_instance().value + next_value
 
     def check(self):
         pass
@@ -120,16 +100,11 @@ class IdentifierNextDGN(DGN):
     def generate(self):
         pass
 
-    def reduce(self):
-        if self.is_one_letter:
-            return self.symbol.value
-        return self.symbol.value + self.next.reduce()
-
 
 class DigitDGN(DGN):
     def __init__(self):
         super().__init__()
-        self.value = str(''.join(rule_manager.get_current_rule().rhs))
+        self.value = str(rule_manager.get_current_rule().rhs[0])
 
     def check(self):
         pass
@@ -141,12 +116,12 @@ class DigitDGN(DGN):
 class MainFunctionDGN(DGN):
     def __init__(self, has_body):
         super().__init__()
-        self.has_body = has_body
-        if self.has_body:
+        self.function_body = None
+        if has_body:
             self.function_body = rule_manager.create_next_rule_instance()
 
     def check(self):
-        if self.has_body:
+        if self.function_body is not None:
             context_manager.push_scope()
             self.function_body.check()
             context_manager.pop_scope()
@@ -154,7 +129,7 @@ class MainFunctionDGN(DGN):
     def generate(self):
         generator_manager.println('int main() {')
         generator_manager.increase_tabs()
-        if self.has_body:
+        if self.function_body is not None:
             self.function_body.generate()
         generator_manager.println()
         generator_manager.println('return 0;')
@@ -163,36 +138,34 @@ class MainFunctionDGN(DGN):
 
 
 class CodeFieldDGN(DGN):
-    def __init__(self, has_code_field):
+    def __init__(self, is_multiple):
         super().__init__()
-        self.has_code_field = has_code_field
-        if self.has_code_field:
-            self.code_field = rule_manager.create_next_rule_instance()
-        self.instruction = rule_manager.create_next_rule_instance()
+        self.instructions = [0]  # instruction list
+        if is_multiple:
+            self.instructions += rule_manager.create_next_rule_instance().instructions
+        self.instructions[0] = rule_manager.create_next_rule_instance()
 
     def check(self):
-        self.instruction.check()
-        if self.has_code_field:
-            self.code_field.check()
+        for instruction in self.instructions:
+            instruction.check()
 
     def generate(self):
-        self.instruction.generate()
-        generator_manager.println()
-        if self.has_code_field:
-            self.code_field.generate()
+        for instruction in self.instructions:
+            instruction.generate()
+            generator_manager.println()
 
 
 class InstructionDGN(DGN):
     def __init__(self, what):
         super().__init__()
         self.what = what
-        self.concrete_instruction = rule_manager.create_next_rule_instance()
+        self.value = rule_manager.create_next_rule_instance()
 
     def check(self):
-        self.concrete_instruction.check()
+        self.value.check()
 
     def generate(self):
-        self.concrete_instruction.generate()
+        self.value.generate()
         if self.what not in ['cycle', 'if_operator']:
             generator_manager.print(';')
 
@@ -201,25 +174,21 @@ class AssignmentDGN(DGN):
     def __init__(self):
         super().__init__()
         self.expression = rule_manager.create_next_rule_instance()
-        self.assignment_operator = rule_manager.create_next_rule_instance()
+        self.assignment_operator = rule_manager.create_next_rule_instance().value
         self.identifier = rule_manager.create_next_rule_instance()
 
     def check(self):
-        idx = self.identifier.reduce()
-        var_type, is_init = context_manager.type_of_variable(idx)
-        if var_type is None:
-            raise Exception('Cannot assign value to undeclared variable "{}"'.format(idx))
-        # expression_type = self.expression.type()
-        # if var_type not in self.expression.type():
-        #     raise Exception('Cannot assign value to variable "{}": wrong types {} and {}'.format(
-        #         idx, var_type, expression_type
-        #     ))
+        var = context_manager.get_variable(self.identifier.value)
+        if var is None:
+            raise Exception('Cannot assign value to an undeclared variable "{}"'.format(self.identifier.value))
         self.expression.check()
+        if self.identifier.type() != self.expression.type():
+            raise Exception('Bad assignment to "{}": wrong rhs type'.format(self.identifier.value))
 
     def generate(self):
-        self.identifier.generate()
+        generator_manager.print(self.identifier.value)
         generator_manager.print(' ')
-        self.assignment_operator.generate()
+        generator_manager.print(self.assignment_operator)
         generator_manager.print(' ')
         self.expression.generate()
 
@@ -227,29 +196,29 @@ class AssignmentDGN(DGN):
 class OperatorAssignmentDGN(DGN):
     def __init__(self):
         super().__init__()
-        self.operator = str(''.join(rule_manager.get_current_rule().rhs))
+        self.value = str(''.join(rule_manager.get_current_rule().rhs))
 
     def check(self):
         pass
 
     def generate(self):
-        generator_manager.print(self.operator)
+        pass
 
 
 class ExpressionDGN(DGN):
     def __init__(self, what):
         super().__init__()
         self.what = what
-        self.expression = rule_manager.create_next_rule_instance()
+        self.value = rule_manager.create_next_rule_instance()
 
     def check(self):
-        self.expression.check()
+        self.value.check()
 
     def generate(self):
-        self.expression.generate()
+        self.value.generate()
 
     def type(self):
-        return self.expression.type()
+        return self.value.type()
 
 
 class LogicalExpressionDGN(DGN):
@@ -258,7 +227,7 @@ class LogicalExpressionDGN(DGN):
         self.what = what
         if self.what in ['math_comparison', 'symb_comparison']:
             self.rhs = rule_manager.create_next_rule_instance()
-            self.operator = rule_manager.create_next_rule_instance()
+            self.operator = rule_manager.create_next_rule_instance().value
             self.lhs = rule_manager.create_next_rule_instance()
         if self.what == 'boolean_value':
             self.boolean_value = rule_manager.create_next_rule_instance()
@@ -266,22 +235,23 @@ class LogicalExpressionDGN(DGN):
             self.expression = rule_manager.create_next_rule_instance()
         if self.what in ['&&', '||']:
             self.rhs = rule_manager.create_next_rule_instance()
+            self.operator = self.what
             self.lhs = rule_manager.create_next_rule_instance()
 
     def check(self):
         if self.what in ['math_comparison', 'symb_comparison', '&&', '||']:
             self.lhs.check()
             self.rhs.check()
-        if self.what == 'boolean_value':
-            self.boolean_value.check()
-        if self.what == 'braced':
+            if self.lhs.type() != self.rhs.type():
+                raise Exception('Wrong types!')
+        elif self.what == 'braced':
             self.expression.check()
 
     def generate(self):
-        if self.what in ['math_comparison', 'symb_comparison']:
+        if self.what in ['math_comparison', 'symb_comparison', '&&', '||']:
             self.lhs.generate()
             generator_manager.print(' ')
-            self.operator.generate()
+            generator_manager.print(self.operator)
             generator_manager.print(' ')
             self.rhs.generate()
         if self.what == 'boolean_value':
@@ -290,13 +260,9 @@ class LogicalExpressionDGN(DGN):
             generator_manager.print('(')
             self.expression.generate()
             generator_manager.print(')')
-        if self.what in ['&&', '||']:
-            self.lhs.generate()
-            generator_manager.print(' ' + self.what + ' ')
-            self.rhs.generate()
 
     def type(self):
-        return 'boolean'
+        return 'bool'
 
 
 class MathExpressionDGN(DGN):
@@ -306,24 +272,39 @@ class MathExpressionDGN(DGN):
 
         if self.what in ['+', '-', '*', '/', '%']:
             self.rhs = rule_manager.create_next_rule_instance()
-            self.operator = rule_manager.create_next_rule_instance()
+            self.operator = rule_manager.create_next_rule_instance().value
             self.lhs = rule_manager.create_next_rule_instance()
+        elif self.what in ['number', 'identifier']:
+            self.value = rule_manager.create_next_rule_instance()
         else:
             self.value = rule_manager.create_next_rule_instance()
 
     def check(self):
-        # todo check math expression identifiers to be numbers
         if self.what in ['+', '-', '*', '/', '%']:
             self.lhs.check()
             self.rhs.check()
-        else:
+            if self.lhs.type() != self.rhs.type():
+                raise Exception('Wrong types!')
+        elif self.what == 'identifier':
+            var = context_manager.get_variable(self.value.value)
+            if var is None:
+                raise Exception('Variable "{}" has not been declared'.format(self.value.value))
+            if var.var_type != 'number':
+                raise Exception('Variable "{}" wrong type: {}'.format(self.value.value, var.var_type))
+            if not var.is_init:
+                raise Exception('Variable "{}" has not been initialized before using'.format(self.value.value))
+            if self.value.type() != 'number':
+                raise Exception('Variable "{}" type is not number'.format(self.value.value))
+        elif self.what == 'function_call':
             self.value.check()
+            if self.value.type() != 'number':
+                raise Exception('Value type is not number'.format(self.value.value))
 
     def generate(self):
         if self.what in ['+', '-', '*', '/', '%']:
             self.lhs.generate()
             generator_manager.print(' ')
-            self.operator.generate()
+            generator_manager.print(self.operator)
             generator_manager.print(' ')
             self.rhs.generate()
         elif self.what == 'unary_minus':
@@ -333,6 +314,8 @@ class MathExpressionDGN(DGN):
             generator_manager.print('(')
             self.value.generate()
             generator_manager.print(')')
+        elif self.what in ['number', 'identifier']:
+            generator_manager.print(self.value.value)
         else:
             self.value.generate()
 
@@ -343,65 +326,56 @@ class MathExpressionDGN(DGN):
 class AdditionSignDGN(DGN):
     def __init__(self):
         super().__init__()
-        self.operator = str(''.join(rule_manager.get_current_rule().rhs))
+        self.value = str(''.join(rule_manager.get_current_rule().rhs))
 
     def check(self):
         pass
 
     def generate(self):
-        generator_manager.print(self.operator)
+        generator_manager.print(self.value)
 
 
 class MultiplicationSignDGN(DGN):
     def __init__(self):
         super().__init__()
-        self.operator = str(''.join(rule_manager.get_current_rule().rhs))
+        self.value = str(''.join(rule_manager.get_current_rule().rhs))
 
     def check(self):
         pass
 
     def generate(self):
-        generator_manager.print(self.operator)
+        generator_manager.print(self.value)
 
 
 class NumberDGN(DGN):
     def __init__(self, what):
         super().__init__()
         self.what = what
-        self.value = rule_manager.create_next_rule_instance()
+        self.value = rule_manager.create_next_rule_instance().value
 
     def check(self):
         pass
 
     def generate(self):
-        self.value.generate()
+        generator_manager.println(self.value)
 
     def type(self):
         return 'number'
 
 
 class IntegerDGN(DGN):
-    def __init__(self, is_one_digit):
+    def __init__(self, is_multiple):
         super().__init__()
-        self.is_one_digit = is_one_digit
-        if not self.is_one_digit:
-            self.integer = rule_manager.create_next_rule_instance()
-        self.digit = rule_manager.create_next_rule_instance()
-        self.value = None
+        next_value = ''
+        if is_multiple:
+            next_value = rule_manager.create_next_rule_instance().value
+        self.value = rule_manager.create_next_rule_instance().value + next_value
 
     def check(self):
         pass
 
     def generate(self):
-        self.value = self.reduce()
         generator_manager.print(self.value)
-
-    def reduce(self):
-        if self.value is not None:
-            return self.value
-        if self.is_one_digit:
-            return self.digit.value
-        return self.digit.value + self.integer.reduce()
 
     def type(self):
         return 'number'
@@ -410,23 +384,15 @@ class IntegerDGN(DGN):
 class RealNumberDGN(DGN):
     def __init__(self):
         super().__init__()
-        self.rhs = rule_manager.create_next_rule_instance()
-        self.lhs = rule_manager.create_next_rule_instance()
-        self.value = None
+        rhs = rule_manager.create_next_rule_instance().value
+        lhs = rule_manager.create_next_rule_instance().value
+        self.value = lhs + '.' + rhs
 
     def check(self):
         pass
 
     def generate(self):
-        self.value = self.reduce()
         generator_manager.print(self.value)
-
-    def reduce(self):
-        if self.value is not None:
-            return self.value
-        a = self.lhs.reduce()
-        b = self.rhs.reduce()
-        return a + '.' + b
 
     def type(self):
         return 'number'
@@ -435,27 +401,25 @@ class RealNumberDGN(DGN):
 class CompareOperatorDGN(DGN):
     def __init__(self):
         super().__init__()
-        self.operator = str(''.join(rule_manager.get_current_rule().rhs))
+        self.value = str(''.join(rule_manager.get_current_rule().rhs))
 
     def check(self):
         pass
 
     def generate(self):
-        generator_manager.print(self.operator)
+        pass
 
 
 class SymbValueDGN(DGN):
     def __init__(self):
         super().__init__()
-        self.symbol = rule_manager.create_next_rule_instance()
+        self.value = '\'' + rule_manager.create_next_rule_instance().value + '\''
 
     def check(self):
         pass
 
     def generate(self):
-        generator_manager.print('\'')
-        generator_manager.print(self.symbol.value)
-        generator_manager.print('\'')
+        generator_manager.print(self.value)
 
     def type(self):
         return 'char'
@@ -490,6 +454,7 @@ class IfOperatorDGN(DGN):
         self.expression = rule_manager.create_next_rule_instance()
 
     def check(self):
+        self.expression.check()
         if not self.has_empty_if_body:
             context_manager.push_scope()
             self.if_code_field.check()
@@ -526,172 +491,112 @@ class IfOperatorDGN(DGN):
 class BooleanValueDGN(DGN):
     def __init__(self):
         super().__init__()
-        self.symbol = str(''.join(rule_manager.get_current_rule().rhs))
-
-    def check(self):
-        pass
-
-    def generate(self):
-        generator_manager.print(self.symbol)
-
-    def type(self):
-        return 'boolean'
-
-
-class FunctionsDeclarationDGN(DGN):
-    def __init__(self, multiple_declarations, has_params, has_body):
-        super().__init__()
-        self.multiple_declarations = multiple_declarations
-        self.has_params = has_params
-        self.has_body = has_body
-        if self.multiple_declarations:
-            self.function_declarations = rule_manager.create_next_rule_instance()
-        if self.has_body:
-            self.function_body = rule_manager.create_next_rule_instance()
-        if self.has_params:
-            self.function_params = rule_manager.create_next_rule_instance()
-        self.identifier = rule_manager.create_next_rule_instance()
-        self.function_return_type = rule_manager.create_next_rule_instance()
-
-    def check(self):
-        # todo check if function returns correct type expression
-        # todo add to current scope function params
-        if self.multiple_declarations:
-            self.function_declarations.check()
-
-        context_manager.push_scope()
-        if self.has_params:
-            self.function_params.check()
-        if self.has_body:
-            pass
-        self.function_body.check()
-        context_manager.pop_scope()
-
-    def generate(self):
-        generator_manager.print('static ')
-        self.function_return_type.generate()
-        generator_manager.print(' ')
-        self.identifier.generate()
-        generator_manager.print('(')
-        if self.has_params:
-            self.function_params.generate()
-        generator_manager.println(') {')
-        generator_manager.increase_tabs()
-        if self.has_body:
-            self.function_body.generate()
-        generator_manager.decrease_tabs()
-        generator_manager.println('}')
-        generator_manager.println()
-        generator_manager.println()
-        if self.multiple_declarations:
-            self.function_declarations.generate()
-
-
-class FunctionReturnTypeDGN(DGN):
-    def __init__(self, is_void):
-        super().__init__()
-        self.is_void = is_void
-        if not self.is_void:
-            self.return_type = rule_manager.create_next_rule_instance()
-        self.value = None
-
-    def check(self):
-        pass
-
-    def generate(self):
-        generator_manager.print(self.reduce())
-
-    def reduce(self):
-        if self.value is not None:
-            return self.value
-        self.value = ('void' if self.is_void else self.return_type.reduce())
-        return self.value
-
-
-class TypeDGN(DGN):
-    def __init__(self):
-        super().__init__()
-        self.valuable_type = rule_manager.create_next_rule_instance()
-        self.value = None
-
-    def check(self):
-        pass
-
-    def generate(self):
-        generator_manager.print(self.reduce())
-
-    def reduce(self):
-        if self.value is not None:
-            return self.value
-        self.value = self.valuable_type.value
-        return self.value
-
-    def type(self):
-        return self.valuable_type.type()
-
-    def type(self):
-        return self.valuable_type.type()
-
-
-class ValuableTypeDGN(DGN):
-    def __init__(self):
-        super().__init__()
         self.value = str(''.join(rule_manager.get_current_rule().rhs))
 
     def check(self):
         pass
 
     def generate(self):
-        if self.value == 'boolean':
-            generator_manager.print('bool')
-        else:
-            generator_manager.print(self.value)
+        generator_manager.print(self.value)
 
     def type(self):
-        if self.value in ['float', 'double', 'int']:
-            return 'number'
+        return 'bool'
+
+
+class FunctionsDeclarationDGN(DGN):
+    def __init__(self, multiple_declarations, has_params, has_body):
+        super().__init__()
+        self.functions = [dict()]
+        if multiple_declarations:
+            self.functions = self.functions + rule_manager.create_next_rule_instance().functions
+        if has_body:
+            self.functions[0]['body'] = rule_manager.create_next_rule_instance()
+        if has_params:
+            self.functions[0]['params'] = rule_manager.create_next_rule_instance()
+        self.functions[0]['identifier'] = rule_manager.create_next_rule_instance().value
+        self.functions[0]['return_type'] = rule_manager.create_next_rule_instance().value
+
+    def check(self):
+        for func in self.functions:
+            if 'params' in func:
+                context_manager.add_function(func['identifier'], len(func['params'].value), func['return_type'])
+            else:
+                context_manager.add_function(func['identifier'], 0, func['return_type'])
+
+            context_manager.check_variable_does_not_exists(func['identifier'])
+            context_manager.push_scope()
+            if 'params' in func:
+                func['params'].check()
+            if 'body' in func:
+                func['body'].check()
+            context_manager.pop_scope()
+
+    def generate(self):
+        for func in self.functions:
+            generator_manager.print(func['return_type'])
+            generator_manager.print(' ')
+            generator_manager.print(func['identifier'])
+            generator_manager.print('(')
+            if 'params' in func:
+                func['params'].generate()
+            generator_manager.println(') {')
+            generator_manager.increase_tabs()
+            if 'body' in func:
+                func['body'].generate()
+            generator_manager.decrease_tabs()
+            generator_manager.println('}')
+            generator_manager.println()
+
+
+class FunctionReturnTypeDGN(DGN):
+    def __init__(self, is_void):
+        super().__init__()
+        self.value = 'void'
+        if not is_void:
+            self.value = rule_manager.create_next_rule_instance().value
+
+    def check(self):
+        pass
+
+    def generate(self):
+        generator_manager.print(self.value)
+
+
+class TypeDGN(DGN):
+    def __init__(self):
+        super().__init__()
+        self.value = str(''.join(rule_manager.get_current_rule().rhs))
+        if self.value == 'boolean':
+            self.value = 'bool'
+
+    def check(self):
+        pass
+
+    def generate(self):
+        generator_manager.print(self.value)
+
+    def type(self):
         return self.value
 
 
 class FunctionParamsDGN(DGN):
     def __init__(self, is_multiple):
         super().__init__()
-        self.is_multiple = is_multiple
+
+        self.value = [(None, None)]
 
         if is_multiple:
-            self.function_params = rule_manager.create_next_rule_instance()
-        self.identifier = rule_manager.create_next_rule_instance()
-        self.valuable_type = rule_manager.create_next_rule_instance()
-        self.value = None
+            self.value = self.value + rule_manager.create_next_rule_instance().value
+        self.value[0] = (rule_manager.create_next_rule_instance().value,
+                         rule_manager.create_next_rule_instance().value)
+        self.value[0] = self.value[0][1], self.value[0][0]
 
     def check(self):
-        context_manager.set_type_of_variable(self.identifier.reduce(), self.valuable_type.value, True)
-        if self.is_multiple:
-            self.function_params.check()
+        for var_type, var_name in self.value:
+            context_manager.create_variable(var_name, var_type, True)
 
     def generate(self):
-        self.valuable_type.generate()
-        generator_manager.print(' ')
-        self.identifier.generate()
-
-        if self.is_multiple:
-            generator_manager.print(', ')
-            self.function_params.generate()
-
-    def reduce(self):
-        ...
-
-
-class FunctionBodyDGN(DGN):
-    def __init__(self):
-        super().__init__()
-        self.code_field = rule_manager.create_next_rule_instance()
-
-    def check(self):
-        self.code_field.check()
-
-    def generate(self):
-        self.code_field.generate()
+        generator_manager.print(', '.join(map(lambda x: x[0] + ' ' + x[1], self.value)))
 
 
 class FunctionReturnDGN(DGN):
@@ -708,25 +613,26 @@ class FunctionReturnDGN(DGN):
 
 
 class VarDeclarationDGN(DGN):
-    def __init__(self, is_initialized):
+    def __init__(self, is_init):
         super().__init__()
-        self.is_initialized = is_initialized
-        if is_initialized:
+        self.is_init = is_init
+        if is_init:
             self.expression = rule_manager.create_next_rule_instance()
-        self.identifier = rule_manager.create_next_rule_instance()
-        self.valuable_type = rule_manager.create_next_rule_instance()
+        self.identifier = rule_manager.create_next_rule_instance().value
+        self.type = rule_manager.create_next_rule_instance().value
 
     def check(self):
-        var_type, is_init = context_manager.type_of_variable(self.identifier.reduce())
-        if var_type is not None:
-            raise Exception('Multiple declaration of variable "{}"'.format(self.identifier.reduce()))
-        context_manager.set_type_of_variable(self.identifier.reduce(), self.valuable_type.value, self.is_initialized)
+        context_manager.check_variable_does_not_exists(self.identifier)
+        context_manager.create_variable(self.identifier, self.type, self.is_init)
+        if self.is_init:
+            if context_manager.get_type(self.type) != self.expression.type():
+                raise Exception('Bad initialization of variable "{}": wrong types'.format(self.identifier))
 
     def generate(self):
-        self.valuable_type.generate()
+        generator_manager.print(self.type)
         generator_manager.print(' ')
-        self.identifier.generate()
-        if self.is_initialized:
+        generator_manager.print(self.identifier)
+        if self.is_init:
             generator_manager.print(' = ')
             self.expression.generate()
 
@@ -734,86 +640,81 @@ class VarDeclarationDGN(DGN):
 class FunctionCallDGN(DGN):
     def __init__(self, has_params, name=None):
         super().__init__()
-        self.has_params = has_params
         self.name = name
-        if self.has_params:
-            self.function_call_params = rule_manager.create_next_rule_instance()
+        self.params = None
+        if has_params:
+            self.params = rule_manager.create_next_rule_instance()
         if self.name is None:
-            self.function_identifier = rule_manager.create_next_rule_instance()
+            self.function_identifier = rule_manager.create_next_rule_instance().value
 
     def check(self):
-        pass
-        # if self.has_params:
-        #     self.function_call_params.check()
-        # if self.name is None:
-        #     self.function_identifier.check()
-        # todo check params to function signature
+        if self.params is not None:
+            self.params.check()
+            context_manager.check_function(self.name or self.function_identifier, len(self.params.params))
+        else:
+            context_manager.check_function(self.name or self.function_identifier, 0)
 
     def generate(self):
-        if self.name is not None:
-            if self.name == 'System.out.print':
-                generator_manager.print('std::cout << ')
-                if self.has_params:
-                    self.function_call_params.generate()
-            elif self.name == 'System.out.println':
-                generator_manager.print('std::cout << ')
-                if self.has_params:
-                    self.function_call_params.generate()
-                generator_manager.print(' << std::endl')
-            elif self.name == 'Math.max':
-                generator_manager.print('std::max(')
-                if self.has_params:
-                    self.function_call_params.generate()
-                generator_manager.print(')')
-            elif self.name == 'Math.min':
-                generator_manager.print('std::min(')
-                if self.has_params:
-                    self.function_call_params.generate()
-                generator_manager.print(')')
+        if self.name == 'System.out.print':
+            generator_manager.print('std::cout << ')
+            self.params.generate()
+            return
+        elif self.name == 'System.out.println':
+            generator_manager.print('std::cout << ')
+            self.params.generate()
+            generator_manager.print(' << std::endl')
+            return
+
+        if self.name == 'Math.max':
+            generator_manager.print('std::max(')
+        elif self.name == 'Math.min':
+            generator_manager.print('std::min(')
         else:
-            self.function_identifier.generate()
+            generator_manager.print(self.function_identifier)
             generator_manager.print('(')
-            if self.has_params:
-                self.function_call_params.generate()
-            generator_manager.print(')')
+        if self.params is not None:
+            self.params.generate()
+        generator_manager.print(')')
 
     def type(self):
-        return context_manager.get_function_return_type()
+        if self.params is not None:
+            self.params.check()
+            return context_manager.get_return_type(self.name or self.function_identifier, len(self.params.params))
+        else:
+            return context_manager.get_return_type(self.name or self.function_identifier, 0)
 
 
 class FunctionCallParamsDGN(DGN):
     def __init__(self, is_multiple):
         super().__init__()
-        self.is_multiple = is_multiple
+        self.params = [None]
         if is_multiple:
-            self.function_call_params = rule_manager.create_next_rule_instance()
-        self.expression = rule_manager.create_next_rule_instance()
+            self.params = self.params + rule_manager.create_next_rule_instance().params
+        self.params[0] = rule_manager.create_next_rule_instance()
 
     def check(self):
-        if self.is_multiple:
-            self.function_call_params.check()
-        self.expression.check()
-        # todo check all expr are declared
+        for param in self.params:
+            param.check()
 
     def generate(self):
-        self.expression.generate()
-        if self.is_multiple:
+        self.params[0].generate()
+        for i in range(1, len(self.params)):
             generator_manager.print(', ')
-            self.function_call_params.generate()
+            self.params[i].generate()
 
 
 class WhileDGN(DGN):
     def __init__(self, has_body):
         super().__init__()
-        self.has_body = has_body
-        if self.has_body:
+        self.code_field = None
+        if has_body:
             self.code_field = rule_manager.create_next_rule_instance()
         self.expression = rule_manager.create_next_rule_instance()
 
     def check(self):
         self.expression.check()
         context_manager.push_scope()
-        if self.has_body:
+        if self.code_field is not None:
             self.code_field.check()
         context_manager.pop_scope()
 
@@ -822,7 +723,7 @@ class WhileDGN(DGN):
         self.expression.generate()
         generator_manager.println(') {')
         generator_manager.increase_tabs()
-        if self.has_body:
+        if self.code_field is not None:
             self.code_field.generate()
         generator_manager.decrease_tabs()
         generator_manager.println('}')
@@ -831,35 +732,34 @@ class WhileDGN(DGN):
 class DoWhileDGN(DGN):
     def __init__(self, has_body):
         super().__init__()
-        self.has_body = has_body
         self.expression = rule_manager.create_next_rule_instance()
-        if self.has_body:
+        self.code_field = None
+        if has_body:
             self.code_field = rule_manager.create_next_rule_instance()
 
     def check(self):
         self.expression.check()
         context_manager.push_scope()
-        if self.has_body:
+        if self.code_field is not None:
             self.code_field.check()
         context_manager.pop_scope()
 
     def generate(self):
-        generator_manager.print('do {')
+        generator_manager.println('do {')
         generator_manager.increase_tabs()
-        if self.has_body:
+        if self.code_field is not None:
             self.code_field.generate()
         generator_manager.decrease_tabs()
         generator_manager.print('} while (')
         self.expression.generate()
-        generator_manager.println(')')
+        generator_manager.println(');')
 
 
 class ForDGN(DGN):
     def __init__(self, is_initialization, has_body):
         super().__init__()
-        self.has_body = has_body
-        self.is_initialization = is_initialization
-        if self.has_body:
+        self.code_field = None
+        if has_body:
             self.code_field = rule_manager.create_next_rule_instance()
         self.move_assignment = rule_manager.create_next_rule_instance()
         self.logical_expression = rule_manager.create_next_rule_instance()
@@ -868,9 +768,9 @@ class ForDGN(DGN):
     def check(self):
         context_manager.push_scope()
         self.assignment.check()
-        self.move_assignment.check()
         self.logical_expression.check()
-        if self.has_body:
+        self.move_assignment.check()
+        if self.code_field is not None:
             self.code_field.check()
         context_manager.pop_scope()
 
@@ -883,7 +783,7 @@ class ForDGN(DGN):
         self.move_assignment.generate()
         generator_manager.println(') {')
         generator_manager.increase_tabs()
-        if self.has_body:
+        if self.code_field is not None:
             self.code_field.generate()
         generator_manager.decrease_tabs()
         generator_manager.println('}')
@@ -892,17 +792,16 @@ class ForDGN(DGN):
 class StringLiteralDGN(DGN):
     def __init__(self, is_not_empty):
         super().__init__()
-        self.is_not_empty = is_not_empty
-        if self.is_not_empty:
-            self.letters = rule_manager.create_next_rule_instance()
+        self.value = ''
+        if is_not_empty:
+            self.value = rule_manager.create_next_rule_instance().value
 
     def check(self):
-        ...
+        pass
 
     def generate(self):
         generator_manager.print('"')
-        if self.is_not_empty:
-            self.letters.generate()
+        generator_manager.print(self.value)
         generator_manager.print('"')
 
     def type(self):
@@ -912,16 +811,14 @@ class StringLiteralDGN(DGN):
 class StringLettersDGN(DGN):
     def __init__(self, is_multiple):
         super().__init__()
-        self.is_multiple = is_multiple
-        if self.is_multiple:
-            self.string_letters = rule_manager.create_next_rule_instance()
-        self.symbol = rule_manager.create_next_rule_instance()
+        self.value = ''
+        if is_multiple:
+            self.value = rule_manager.create_next_rule_instance().value
+        self.value = rule_manager.create_next_rule_instance().value + self.value
 
     def check(self):
-        ...
+        pass
 
     def generate(self):
-        generator_manager.print(self.symbol.value)
-        if self.is_multiple:
-            self.string_letters.generate()
+        pass
 

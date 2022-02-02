@@ -1,5 +1,7 @@
 class Main {
     public static void main(String[] args) {
-        System.out.print("Hello, world!");
+        int a = 4;
+        int b = 5;
+        int a = 1;
     }
 }
