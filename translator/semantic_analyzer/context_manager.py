@@ -1,4 +1,9 @@
+import collections
+
 from translator.constants import KEYWORDS
+from collections import namedtuple
+
+Variable = namedtuple('Variable', ['var_type', 'is_init'])
 
 
 class ContextManager:
@@ -6,6 +11,10 @@ class ContextManager:
         self.scopes = []
         self.functions = dict()
         self.keywords = KEYWORDS
+        self.add_function('System.out.println', 1, 'void')
+        self.add_function('System.out.print', 1, 'void')
+        self.add_function('Math.min', 2, 'number')
+        self.add_function('Math.max', 2, 'number')
 
     def push_scope(self):
         self.scopes.append(dict())
@@ -13,22 +22,42 @@ class ContextManager:
     def pop_scope(self):
         self.scopes.pop()
 
-    def type_of_variable(self, var_name):
+    def check_variable_does_not_exists(self, name):
+        if name in KEYWORDS:
+            raise Exception('Unexpected reserved name for a variable "{}"'.format(name))
+        if name in self.functions:
+            raise Exception('Mismatch function/variable "{}"'.format(name))
         for scope in self.scopes:
-            if var_name in scope:
-                return scope[var_name]
-        return None, None
+            if name in scope:
+                raise Exception('Variable with name "{}" has been already declared'.format(name))
 
-    def set_type_of_variable(self, var_name, var_type, is_inited):
-        self.scopes[len(self.scopes) - 1][var_name] = (var_type, is_inited)
+    def create_variable(self, name, var_type, is_init):
+        self.check_variable_does_not_exists(name)
+        self.scopes[len(self.scopes) - 1][name] = Variable(self.get_type(var_type), is_init)
 
-    def make_function(self, name, args, return_type):
-        self.functions[name + '(' + ', '.join(args) + ')'] = return_type, args
+    def get_variable(self, name):
+        for scope in self.scopes:
+            if name in scope:
+                return scope[name]
+        return None
 
-    def get_function_return_type(self, name, args):
-        better_name = name + '(' + ', '.join(args) + ')'
-        if better_name in self.functions:
-            return self.functions[better_name]
+    def get_type(self, var_type):
+        if var_type in ['int', 'float', 'double']:
+            return 'number'
+        return var_type
+
+    def add_function(self, name, args_size, return_type):
+        real_name = name + ' ' + str(args_size)
+        self.functions[real_name] = self.get_type(return_type)
+
+    def check_function(self, name, args_size):
+        real_name = name + ' ' + str(args_size)
+        if real_name not in self.functions:
+            raise Exception('Cannot resolve function name "{}"'.format(name))
+
+    def get_return_type(self, name, args_size):
+        self.check_function(name, args_size)
+        return self.functions[name + ' ' + str(args_size)]
 
 
 context_manager = ContextManager()
