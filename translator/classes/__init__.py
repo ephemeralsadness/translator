@@ -59,15 +59,19 @@ class IdentifierDGN(DGN):
         if not is_one_letter:
             identifier_next = rule_manager.create_next_rule_instance().value
         self.value = rule_manager.create_next_rule_instance().value + identifier_next
+        self.is_byte = False
 
     def check(self):
         var = context_manager.get_variable(self.value)
+        self.is_byte = var.original_var_type == 'char'
         if var is None:
             raise Exception('Variable "{}" has not been declared'.format(self.value))
         if not var.is_init:
             raise Exception('Variable "{}" has not been initialized before using'.format(self.value))
 
     def generate(self):
+        if self.is_byte:
+            generator_manager.print('(int)')
         generator_manager.print(self.value)
 
     def type(self):
@@ -287,6 +291,7 @@ class MathExpressionDGN(DGN):
                 raise Exception('Wrong types!')
         elif self.what == 'identifier':
             var = context_manager.get_variable(self.value.value)
+            self.value.check()
             if var is None:
                 raise Exception('Variable "{}" has not been declared'.format(self.value.value))
             if var.var_type != 'number':
@@ -314,8 +319,10 @@ class MathExpressionDGN(DGN):
             generator_manager.print('(')
             self.value.generate()
             generator_manager.print(')')
-        elif self.what in ['number', 'identifier']:
+        elif self.what == 'number':
             generator_manager.print(self.value.value)
+        elif self.what == 'identifier':
+            self.value.generate()
         else:
             self.value.generate()
 
@@ -568,6 +575,8 @@ class TypeDGN(DGN):
         self.value = str(''.join(rule_manager.get_current_rule().rhs))
         if self.value == 'boolean':
             self.value = 'bool'
+        if self.value == 'byte':
+            self.value = 'char'
 
     def check(self):
         pass
