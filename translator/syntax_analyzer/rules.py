@@ -22,7 +22,7 @@ def ct(a):
     b.pop(len(b) - 1)
     c = []
     for x in b:
-        if x == '`':
+        if x == ' ':
             c.append(x)
         elif '~' in x:
             c.append(x)
@@ -162,6 +162,11 @@ java_rules = [
          ct(['~array2_element_assignment~', ';']),
          InstructionDGN,
          what='array2_element_assignment'
+         ),
+    Rule('~instruction~',
+         ct(['~arraylist_initialization~', ';']),
+         InstructionDGN,
+         what='arraylist_initialization'
          ),
 
     Rule('~assignment~',
@@ -675,4 +680,68 @@ java_rules = [
     Rule('~array2_element~',
          ct(['~identifier~', '[', '~math_expression~', ']', '[', '~math_expression~', ']']),
          Array2ElementDGN),
+    *[
+        Rule('~arraylist_initialization~',
+             ct(['Arraylist', '<', wrapper_type, '>', '~identifier~', '=',
+                 'new', 'Arraylist', '<', wrapper_type, '>', '(', ')']),
+             ArraylistInitializationDGN,
+             cpp_type=cpp_type)
+        for wrapper_type, cpp_type in WRAPPER_TYPES_MAPPING.items()
+    ],
+    Rule('~instruction~',
+         ct(['~arraylist_add~', ';']),
+         InstructionDGN,
+         what='arraylist_add'
+         ),
+    Rule('~instruction~',
+         ct(['~arraylist_clear~', ';']),
+         InstructionDGN,
+         what='arraylist_clear'
+         ),
+    Rule('~instruction~',
+         ct(['~arraylist_remove~', ';']),
+         InstructionDGN,
+         what='arraylist_remove'
+         ),
+    Rule('~expression~',
+         ct(['~arraylist_get~']),
+         ExpressionDGN,
+         what='arraylist_get'
+         ),
+    Rule('~math_expression~',
+         ct(['~arraylist_size~']),
+         MathExpressionDGN,
+         what='arraylist_size'
+         ),
+    Rule('~logical_expression~',
+         ct(['~arraylist_contains~']),
+         LogicalExpressionDGN,
+         what='arraylist_contains'
+         ),
+    Rule('~logical_expression~',
+         ct(['~arraylist_is_empty~']),
+         LogicalExpressionDGN,
+         what='arraylist_is_empty'
+         ),
+    Rule('~arraylist_add~',
+         ['~identifier~'] + ct(['.add', '(', '~expression~', ')']),
+         ArraylistAddDGN),
+    Rule('~arraylist_clear~',
+         ['~identifier~'] + ct(['.clear', '(', ')']),
+         ArraylistClearDGN),
+    Rule('~arraylist_remove~',
+         ['~identifier~'] + ct(['.remove', '(', '~math_expression~', ')']),
+         ArraylistRemoveDGN),
+    Rule('~arraylist_get~',
+         ['~identifier~'] + ct(['.get', '(', '~math_expression~', ')']),
+         ArraylistGetDGN),
+    Rule('~arraylist_size~',
+         ['~identifier~'] + ct(['.size', '(', ')']),
+         ArraylistSizeDGN),
+    Rule('~arraylist_contains~',
+         ['~identifier~'] + ct(['.contains', '(', '~expression~', ')']),
+         ArraylistContainsDGN),
+    Rule('~arraylist_is_empty~',
+         ['~identifier~'] + ct(['.isEmpty', '(', ')']),
+         ArraylistIsEmptyDGN),
 ]

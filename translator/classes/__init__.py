@@ -234,14 +234,16 @@ class LogicalExpressionDGN(DGN):
             self.rhs = rule_manager.create_next_rule_instance()
             self.operator = rule_manager.create_next_rule_instance().value
             self.lhs = rule_manager.create_next_rule_instance()
-        if self.what == 'boolean_value':
+        elif self.what == 'boolean_value':
             self.boolean_value = rule_manager.create_next_rule_instance()
-        if self.what == 'braced':
+        elif self.what == 'braced':
             self.expression = rule_manager.create_next_rule_instance()
-        if self.what in ['&&', '||']:
+        elif self.what in ['&&', '||']:
             self.rhs = rule_manager.create_next_rule_instance()
             self.operator = self.what
             self.lhs = rule_manager.create_next_rule_instance()
+        else:
+            self.expression = rule_manager.create_next_rule_instance()
 
     def check(self):
         if self.what in ['math_comparison', 'symb_comparison', '&&', '||']:
@@ -259,12 +261,15 @@ class LogicalExpressionDGN(DGN):
             generator_manager.print(self.operator)
             generator_manager.print(' ')
             self.rhs.generate()
-        if self.what == 'boolean_value':
+        elif self.what == 'boolean_value':
             self.boolean_value.generate()
-        if self.what == 'braced':
+        elif self.what == 'braced':
             generator_manager.print('(')
             self.expression.generate()
             generator_manager.print(')')
+        else:
+            self.expression.generate()
+
 
     def type(self):
         return 'bool'
@@ -580,6 +585,8 @@ class TypeDGN(DGN):
             self.value = 'bool'
         if self.value == 'byte':
             self.value = 'char'
+        if self.value == 'long':
+            self.value = 'long long'
 
     def check(self):
         pass
@@ -937,6 +944,9 @@ class Array1ElementDGN(DGN):
         self.index.generate()
         generator_manager.print(']')
 
+    def type(self):
+        ...  # TODO all
+
 
 class Array2ElementDGN(DGN):
     def __init__(self):
@@ -956,3 +966,132 @@ class Array2ElementDGN(DGN):
         generator_manager.print('[')
         self.index2.generate()
         generator_manager.print(']')
+
+    def type(self):
+        ...  # TODO all
+
+
+class ArraylistInitializationDGN(DGN):
+    def __init__(self, cpp_type):
+        super().__init__()
+        self.cpp_type = cpp_type
+        self.identifier = rule_manager.create_next_rule_instance()
+
+    def check(self):
+        ...  # TODO all
+
+    def generate(self):
+        generator_manager.print('std::vector<')
+        generator_manager.print(self.cpp_type)
+        generator_manager.print('> ')
+        generator_manager.print(self.identifier.value)
+
+
+class ArraylistAddDGN(DGN):
+    def __init__(self):
+        super().__init__()
+        self.expression = rule_manager.create_next_rule_instance()
+        self.identifier = rule_manager.create_next_rule_instance()
+
+    def check(self):
+        ...  # TODO all
+
+    def generate(self):
+        generator_manager.print(self.identifier.value)
+        generator_manager.print('.push_back(')
+        self.expression.generate()
+        generator_manager.print(')')
+
+
+class ArraylistClearDGN(DGN):
+    def __init__(self):
+        super().__init__()
+        self.identifier = rule_manager.create_next_rule_instance()
+
+    def check(self):
+        ...  # TODO all
+
+    def generate(self):
+        generator_manager.print(self.identifier.value)
+        generator_manager.print('.clear()')
+
+
+class ArraylistRemoveDGN(DGN):
+    def __init__(self):
+        super().__init__()
+        self.expression = rule_manager.create_next_rule_instance()
+        self.identifier = rule_manager.create_next_rule_instance()
+
+    def check(self):
+        ...  # TODO all
+
+    def generate(self):
+        generator_manager.print(self.identifier.value)
+        generator_manager.print('.erase(')
+        generator_manager.print(self.identifier.value)
+        generator_manager.print('.begin() + (')
+        self.expression.generate()
+        generator_manager.print('))')
+
+
+class ArraylistGetDGN(DGN):
+    def __init__(self):
+        super().__init__()
+        self.expression = rule_manager.create_next_rule_instance()
+        self.identifier = rule_manager.create_next_rule_instance()
+
+    def check(self):
+        ...  # TODO all
+
+    def generate(self):
+        generator_manager.print(self.identifier.value)
+        generator_manager.print('[')
+        self.expression.generate()
+        generator_manager.print(']')
+
+
+class ArraylistSizeDGN(DGN):
+    def __init__(self):
+        super().__init__()
+        self.identifier = rule_manager.create_next_rule_instance()
+
+    def check(self):
+        ...  # TODO all
+
+    def generate(self):
+        generator_manager.print(self.identifier.value)
+        generator_manager.print('.size()')
+
+
+class ArraylistContainsDGN(DGN):
+    def __init__(self):
+        super().__init__()
+        self.expression = rule_manager.create_next_rule_instance()
+        self.identifier = rule_manager.create_next_rule_instance()
+
+    def check(self):
+        ...  # TODO all
+
+    def generate(self):
+        generator_manager.print('(')
+        generator_manager.print(self.identifier.value)
+        generator_manager.print('.end() != std::find(')
+        generator_manager.print(self.identifier.value)
+        generator_manager.print('.begin(), ')
+        generator_manager.print(self.identifier.value)
+        generator_manager.print('.end(), ')
+        self.expression.generate()
+        generator_manager.print('))')
+
+
+class ArraylistIsEmptyDGN(DGN):
+    def __init__(self):
+        super().__init__()
+        self.identifier = rule_manager.create_next_rule_instance()
+
+    def check(self):
+        ...  # TODO all
+
+    def generate(self):
+        generator_manager.print(self.identifier.value)
+        generator_manager.print('.empty()')
