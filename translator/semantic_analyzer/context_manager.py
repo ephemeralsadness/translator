@@ -3,7 +3,7 @@ import collections
 from translator.constants import KEYWORDS
 from collections import namedtuple
 
-Variable = namedtuple('Variable', ['var_type', 'is_init', 'original_var_type'])
+Variable = namedtuple('Variable', ['var_type', 'is_init', 'original_var_type', 'what'])
 
 
 class ContextManager:
@@ -33,7 +33,15 @@ class ContextManager:
 
     def create_variable(self, name, var_type, is_init):
         self.check_variable_does_not_exists(name)
-        self.scopes[len(self.scopes) - 1][name] = Variable(self.get_type(var_type), is_init, var_type)
+        self.scopes[len(self.scopes) - 1][name] = Variable(self.get_type(var_type), is_init, var_type, 'var')
+
+    def create_array(self, name, var_type, dims):
+        self.check_variable_does_not_exists(name)
+        self.scopes[len(self.scopes) - 1][name] = Variable(self.get_type(var_type), True, var_type, f'array{dims}')
+
+    def create_arraylist(self, name, var_type):
+        self.check_variable_does_not_exists(name)
+        self.scopes[len(self.scopes) - 1][name] = Variable(self.get_type(var_type), True, var_type, 'arraylist')
 
     def get_variable(self, name):
         for scope in self.scopes:

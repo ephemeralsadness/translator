@@ -14,6 +14,5 @@ class Main {
             System.out.print(v.get(i));
         }
         System.out.println(v.contains(8));
-
     }
 }

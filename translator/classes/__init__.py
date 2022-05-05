@@ -853,7 +853,8 @@ class Array1InitializationDGN(DGN):
     def check(self):
         if self.lhs_type != self.rhs_type:
             raise Exception(f'Cannot cast an array of type {self.rhs_type} to an array of type {self.lhs_type}')
-        # TODO all
+        self.size.check()
+        context_manager.create_array(self.identifier.value, self.lhs_type, dims=1)
 
     def generate(self):
         generator_manager.print('std::vector<')
@@ -877,7 +878,9 @@ class Array2InitializationDGN(DGN):
     def check(self):
         if self.lhs_type != self.rhs_type:
             raise Exception(f'Cannot cast an array of type {self.rhs_type} to an array of type {self.lhs_type}')
-        # TODO all
+        self.size1.check()
+        self.size2.check()
+        context_manager.create_array(self.identifier.value, self.lhs_type, dims=2)
 
     def generate(self):
         generator_manager.print('std::vector<std::vector<')
@@ -901,7 +904,10 @@ class Array1ElementAssignmentDGN(DGN):
         self.array1element = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...  # TODO all
+        self.expression.check()
+        self.array1element.check()
+        if self.array1element.identifier.type() != self.expression.type():
+            raise Exception('Bad assignment to "{}[]": wrong rhs type'.format(self.array1element.identifier.value))
 
     def generate(self):
         self.array1element.generate()
@@ -919,7 +925,10 @@ class Array2ElementAssignmentDGN(DGN):
         self.array2element = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...  # TODO all
+        self.expression.check()
+        self.array2element.check()
+        if self.array2element.type() != self.expression.type():
+            raise Exception('Bad assignment to "{}[]": wrong rhs type'.format(self.array2element.identifier.value))
 
     def generate(self):
         self.array2element.generate()
@@ -936,7 +945,10 @@ class Array1ElementDGN(DGN):
         self.identifier = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...  # TODO all
+        self.index.check()
+        var = context_manager.get_variable(self.identifier.value)
+        if var is None or var.what != 'array1':
+            raise Exception('Variable "{}" has not been declared'.format(self.identifier.value))
 
     def generate(self):
         generator_manager.print(self.identifier.value)
@@ -945,7 +957,7 @@ class Array1ElementDGN(DGN):
         generator_manager.print(']')
 
     def type(self):
-        ...  # TODO all
+        return self.identifier.type()
 
 
 class Array2ElementDGN(DGN):
@@ -956,7 +968,11 @@ class Array2ElementDGN(DGN):
         self.identifier = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...  # TODO all
+        self.index1.check()
+        self.index2.check()
+        var = context_manager.get_variable(self.identifier.value)
+        if var is None or var.what != 'array2':
+            raise Exception('Variable "{}" has not been declared'.format(self.identifier.value))
 
     def generate(self):
         generator_manager.print(self.identifier.value)
@@ -968,7 +984,7 @@ class Array2ElementDGN(DGN):
         generator_manager.print(']')
 
     def type(self):
-        ...  # TODO all
+        return self.identifier.type()
 
 
 class ArraylistInitializationDGN(DGN):
@@ -978,7 +994,7 @@ class ArraylistInitializationDGN(DGN):
         self.identifier = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...  # TODO all
+        context_manager.create_arraylist(self.identifier.value, self.cpp_type)
 
     def generate(self):
         generator_manager.print('std::vector<')
@@ -994,7 +1010,10 @@ class ArraylistAddDGN(DGN):
         self.identifier = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...  # TODO all
+        self.expression.check()
+        var = context_manager.get_variable(self.identifier.value)
+        if var is None or var.what != 'arraylist':
+            raise Exception('Variable "{}" has not been declared'.format(self.identifier.value))
 
     def generate(self):
         generator_manager.print(self.identifier.value)
@@ -1009,7 +1028,9 @@ class ArraylistClearDGN(DGN):
         self.identifier = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...  # TODO all
+        var = context_manager.get_variable(self.identifier.value)
+        if var is None or var.what != 'arraylist':
+            raise Exception('Variable "{}" has not been declared'.format(self.identifier.value))
 
     def generate(self):
         generator_manager.print(self.identifier.value)
@@ -1023,7 +1044,10 @@ class ArraylistRemoveDGN(DGN):
         self.identifier = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...  # TODO all
+        self.expression.check()
+        var = context_manager.get_variable(self.identifier.value)
+        if var is None or var.what != 'arraylist':
+            raise Exception('Variable "{}" has not been declared'.format(self.identifier.value))
 
     def generate(self):
         generator_manager.print(self.identifier.value)
@@ -1041,13 +1065,19 @@ class ArraylistGetDGN(DGN):
         self.identifier = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...  # TODO all
+        self.expression.check()
+        var = context_manager.get_variable(self.identifier.value)
+        if var is None or var.what != 'arraylist':
+            raise Exception('Variable "{}" has not been declared'.format(self.identifier.value))
 
     def generate(self):
         generator_manager.print(self.identifier.value)
         generator_manager.print('[')
         self.expression.generate()
         generator_manager.print(']')
+
+    def type(self):
+        return self.identifier.type()
 
 
 class ArraylistSizeDGN(DGN):
@@ -1056,11 +1086,16 @@ class ArraylistSizeDGN(DGN):
         self.identifier = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...  # TODO all
+        var = context_manager.get_variable(self.identifier.value)
+        if var is None or var.what != 'arraylist':
+            raise Exception('Variable "{}" has not been declared'.format(self.identifier.value))
 
     def generate(self):
         generator_manager.print(self.identifier.value)
         generator_manager.print('.size()')
+
+    def type(self):
+        return 'number'
 
 
 class ArraylistContainsDGN(DGN):
@@ -1070,7 +1105,10 @@ class ArraylistContainsDGN(DGN):
         self.identifier = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...  # TODO all
+        self.expression.check()
+        var = context_manager.get_variable(self.identifier.value)
+        if var is None or var.what != 'arraylist':
+            raise Exception('Variable "{}" has not been declared'.format(self.identifier.value))
 
     def generate(self):
         generator_manager.print('(')
@@ -1083,6 +1121,9 @@ class ArraylistContainsDGN(DGN):
         self.expression.generate()
         generator_manager.print('))')
 
+    def type(self):
+        return 'bool'
+
 
 class ArraylistIsEmptyDGN(DGN):
     def __init__(self):
@@ -1090,8 +1131,13 @@ class ArraylistIsEmptyDGN(DGN):
         self.identifier = rule_manager.create_next_rule_instance()
 
     def check(self):
-        ...  # TODO all
+        var = context_manager.get_variable(self.identifier.value)
+        if var is None or var.what != 'arraylist':
+            raise Exception('Variable "{}" has not been declared'.format(self.identifier.value))
 
     def generate(self):
         generator_manager.print(self.identifier.value)
         generator_manager.print('.empty()')
+
+    def type(self):
+        return 'bool'
