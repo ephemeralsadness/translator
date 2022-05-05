@@ -1,11 +1,10 @@
 #include <iostream>
 #include <algorithm>
 #include <string>
+#include <vector>
 
 int main() {
-	int a1 = 2;
-	int b1 = 3;
-	std::cout << a1 + b1 << std::endl;
+	std::vector<int> x(3 * 9);
 	
 	return 0;
 }

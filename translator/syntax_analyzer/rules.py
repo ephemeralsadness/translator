@@ -143,6 +143,26 @@ java_rules = [
          InstructionDGN,
          what='function_return'
          ),
+    Rule('~instruction~',
+         ct(['~array1_initialization~', ';']),
+         InstructionDGN,
+         what='array1_initialization'
+         ),
+    Rule('~instruction~',
+         ct(['~array2_initialization~', ';']),
+         InstructionDGN,
+         what='array2_initialization'
+         ),
+    Rule('~instruction~',
+         ct(['~array1_element_assignment~', ';']),
+         InstructionDGN,
+         what='array1_element_assignment'
+         ),
+    Rule('~instruction~',
+         ct(['~array2_element_assignment~', ';']),
+         InstructionDGN,
+         what='array2_element_assignment'
+         ),
 
     Rule('~assignment~',
          ct(['~identifier~', '~operator_assignment~', '~expression~']),
@@ -173,6 +193,16 @@ java_rules = [
          ['~identifier~'],
          ExpressionDGN,
          what='identifier'
+         ),
+    Rule('~expression~',
+         ['~array1_element~'],
+         ExpressionDGN,
+         what='array1_element'
+         ),
+    Rule('~expression~',
+         ['~array2_element~'],
+         ExpressionDGN,
+         what='array2_element'
          ),
     Rule('~expression~',
          ['~function_call~'],
@@ -223,6 +253,16 @@ java_rules = [
          ['~identifier~'],
          MathExpressionDGN,
          what='identifier'
+         ),
+    Rule('~math_expression~',
+         ['~array1_element~'],
+         MathExpressionDGN,
+         what='array1_element'
+         ),
+    Rule('~math_expression~',
+         ['~array2_element~'],
+         MathExpressionDGN,
+         what='array2_element'
          ),
     Rule('~math_expression~',
          ['~function_call~'],
@@ -613,4 +653,26 @@ java_rules = [
          StringLettersDGN,
          is_multiple=False
          ),
+
+    # new rules
+    Rule('~array1_initialization~',
+         ct(['~type~', '[', ']', '~identifier~', '=',
+             'new', '~type~', '[', '~math_expression~', ']']),
+         Array1InitializationDGN),
+    Rule('~array2_initialization~',
+         ct(['~type~', '[', ']', '[', ']', '~identifier~', '=',
+             'new', '~type~', '[', '~math_expression~', ']', '[', '~math_expression~', ']']),
+         Array2InitializationDGN),
+    Rule('~array1_element_assignment~',
+         ct(['~array1_element~', '~operator_assignment~', '~expression~']),
+         Array1ElementAssignmentDGN),
+    Rule('~array2_element_assignment~',
+         ct(['~array2_element~', '~operator_assignment~', '~expression~']),
+         Array2ElementAssignmentDGN),
+    Rule('~array1_element~',
+         ct(['~identifier~', '[', '~math_expression~', ']']),
+         Array1ElementDGN),
+    Rule('~array2_element~',
+         ct(['~identifier~', '[', '~math_expression~', ']', '[', '~math_expression~', ']']),
+         Array2ElementDGN),
 ]

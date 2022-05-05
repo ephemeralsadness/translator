@@ -42,6 +42,7 @@ class ProgramDGN(DGN):
         generator_manager.println('#include <iostream>')
         generator_manager.println('#include <algorithm>')
         generator_manager.println('#include <string>')
+        generator_manager.println('#include <vector>')
         generator_manager.println()
         if self.functions is not None:
             self.functions.generate()
@@ -278,7 +279,7 @@ class MathExpressionDGN(DGN):
             self.rhs = rule_manager.create_next_rule_instance()
             self.operator = rule_manager.create_next_rule_instance().value
             self.lhs = rule_manager.create_next_rule_instance()
-        elif self.what in ['number', 'identifier']:
+        elif self.what in ['number', 'identifier', 'array1_element', 'array2_element']:
             self.value = rule_manager.create_next_rule_instance()
         else:
             self.value = rule_manager.create_next_rule_instance()
@@ -300,6 +301,8 @@ class MathExpressionDGN(DGN):
                 raise Exception('Variable "{}" has not been initialized before using'.format(self.value.value))
             if self.value.type() != 'number':
                 raise Exception('Variable "{}" type is not number'.format(self.value.value))
+        elif self.what == 'array1_element' or self.what == 'array2_element':
+            ...  # TODO make something
         elif self.what == 'function_call':
             self.value.check()
             if self.value.type() != 'number':
@@ -831,3 +834,125 @@ class StringLettersDGN(DGN):
     def generate(self):
         pass
 
+
+class Array1InitializationDGN(DGN):
+    def __init__(self):
+        super().__init__()
+        self.size = rule_manager.create_next_rule_instance()
+        self.rhs_type = rule_manager.create_next_rule_instance().value
+        self.identifier = rule_manager.create_next_rule_instance()
+        self.lhs_type = rule_manager.create_next_rule_instance().value
+
+    def check(self):
+        if self.lhs_type != self.rhs_type:
+            raise Exception(f'Cannot cast an array of type {self.rhs_type} to an array of type {self.lhs_type}')
+        # TODO all
+
+    def generate(self):
+        generator_manager.print('std::vector<')
+        generator_manager.print(self.lhs_type)
+        generator_manager.print('> ')
+        generator_manager.print(self.identifier.value)
+        generator_manager.print('(')
+        self.size.generate()
+        generator_manager.print(')')
+
+
+class Array2InitializationDGN(DGN):
+    def __init__(self):
+        super().__init__()
+        self.size2 = rule_manager.create_next_rule_instance()
+        self.size1 = rule_manager.create_next_rule_instance()
+        self.rhs_type = rule_manager.create_next_rule_instance().value
+        self.identifier = rule_manager.create_next_rule_instance()
+        self.lhs_type = rule_manager.create_next_rule_instance().value
+
+    def check(self):
+        if self.lhs_type != self.rhs_type:
+            raise Exception(f'Cannot cast an array of type {self.rhs_type} to an array of type {self.lhs_type}')
+        # TODO all
+
+    def generate(self):
+        generator_manager.print('std::vector<std::vector<')
+        generator_manager.print(self.lhs_type)
+        generator_manager.print('>> ')
+        generator_manager.print(self.identifier.value)
+        generator_manager.print('(')
+        self.size1.generate()
+        generator_manager.print(', std::vector<')
+        generator_manager.print(self.lhs_type)
+        generator_manager.print('>(')
+        self.size2.generate()
+        generator_manager.print('))')
+
+
+class Array1ElementAssignmentDGN(DGN):
+    def __init__(self):
+        super().__init__()
+        self.expression = rule_manager.create_next_rule_instance()
+        self.operator = rule_manager.create_next_rule_instance().value
+        self.array1element = rule_manager.create_next_rule_instance()
+
+    def check(self):
+        ...  # TODO all
+
+    def generate(self):
+        self.array1element.generate()
+        generator_manager.print(' ')
+        generator_manager.print(self.operator)
+        generator_manager.print(' ')
+        self.expression.generate()
+
+
+class Array2ElementAssignmentDGN(DGN):
+    def __init__(self):
+        super().__init__()
+        self.expression = rule_manager.create_next_rule_instance()
+        self.operator = rule_manager.create_next_rule_instance().value
+        self.array2element = rule_manager.create_next_rule_instance()
+
+    def check(self):
+        ...  # TODO all
+
+    def generate(self):
+        self.array2element.generate()
+        generator_manager.print(' ')
+        generator_manager.print(self.operator)
+        generator_manager.print(' ')
+        self.expression.generate()
+
+
+class Array1ElementDGN(DGN):
+    def __init__(self):
+        super().__init__()
+        self.index = rule_manager.create_next_rule_instance()
+        self.identifier = rule_manager.create_next_rule_instance()
+
+    def check(self):
+        ...  # TODO all
+
+    def generate(self):
+        generator_manager.print(self.identifier.value)
+        generator_manager.print('[')
+        self.index.generate()
+        generator_manager.print(']')
+
+
+class Array2ElementDGN(DGN):
+    def __init__(self):
+        super().__init__()
+        self.index2 = rule_manager.create_next_rule_instance()
+        self.index1 = rule_manager.create_next_rule_instance()
+        self.identifier = rule_manager.create_next_rule_instance()
+
+    def check(self):
+        ...  # TODO all
+
+    def generate(self):
+        generator_manager.print(self.identifier.value)
+        generator_manager.print('[')
+        self.index1.generate()
+        generator_manager.print(']')
+        generator_manager.print('[')
+        self.index2.generate()
+        generator_manager.print(']')

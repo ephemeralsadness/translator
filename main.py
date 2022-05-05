@@ -33,6 +33,12 @@ def main():
         raise Exception('There is a file/directory by that path provided in --compilepath: {}. '
                         'Please select another path.'.format(compiled_file_name))
 
+    # DEBUG
+    folder = 'tests\\new_tests\\array_two_dimensional'
+    java_file_name = os.path.join(folder, 'Main.java')
+    cpp_file_name = os.path.join(folder, 'main.cpp')
+    compiled_file_name = os.path.join(folder, 'main.exe')
+
     with open(java_file_name, 'r') as java_file:
         with open(cpp_file_name, 'w') as cpp_file:
             translator = Translator(os.path.dirname(Path(java_file_name)), debug)
