@@ -534,9 +534,10 @@ class FunctionsDeclarationDGN(DGN):
     def check(self):
         for func in self.functions:
             if 'params' in func:
-                context_manager.add_function(func['identifier'], len(func['params'].value), func['return_type'])
+                params = list(map(lambda x: x[0], func['params'].value))
+                context_manager.add_function(func['identifier'], params, func['return_type'])
             else:
-                context_manager.add_function(func['identifier'], 0, func['return_type'])
+                context_manager.add_function(func['identifier'], [], func['return_type'])
 
             context_manager.check_variable_does_not_exists(func['identifier'])
             context_manager.push_scope()
@@ -669,9 +670,10 @@ class FunctionCallDGN(DGN):
     def check(self):
         if self.params is not None:
             self.params.check()
-            context_manager.check_function(self.name or self.function_identifier, len(self.params.params))
+            params = list(map(lambda x: x.type(), self.params.params))
+            context_manager.check_function(self.name or self.function_identifier, params)
         else:
-            context_manager.check_function(self.name or self.function_identifier, 0)
+            context_manager.check_function(self.name or self.function_identifier, [])
 
     def generate(self):
         if self.name == 'System.out.print':
@@ -698,9 +700,10 @@ class FunctionCallDGN(DGN):
     def type(self):
         if self.params is not None:
             self.params.check()
-            return context_manager.get_return_type(self.name or self.function_identifier, len(self.params.params))
+            params = list(map(lambda x: x.type(), self.params.params))
+            return context_manager.get_return_type(self.name or self.function_identifier, params)
         else:
-            return context_manager.get_return_type(self.name or self.function_identifier, 0)
+            return context_manager.get_return_type(self.name or self.function_identifier, [])
 
 
 class FunctionCallParamsDGN(DGN):

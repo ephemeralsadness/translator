@@ -1,6 +1,6 @@
 import collections
 
-from translator.constants import KEYWORDS
+from translator.constants import KEYWORDS, VARIABLE_TYPES
 from collections import namedtuple
 
 Variable = namedtuple('Variable', ['var_type', 'is_init', 'original_var_type', 'what'])
@@ -11,10 +11,11 @@ class ContextManager:
         self.scopes = []
         self.functions = dict()
         self.keywords = KEYWORDS
-        self.add_function('System.out.println', 1, 'void')
-        self.add_function('System.out.print', 1, 'void')
-        self.add_function('Math.min', 2, 'number')
-        self.add_function('Math.max', 2, 'number')
+        for var_type in VARIABLE_TYPES:
+            self.add_function('System.out.println', [var_type], 'void')
+            self.add_function('System.out.print', [var_type], 'void')
+            self.add_function('Math.min', [var_type, var_type], 'number')
+            self.add_function('Math.max', [var_type, var_type], 'number')
 
     def push_scope(self):
         self.scopes.append(dict())
@@ -50,22 +51,25 @@ class ContextManager:
         return None
 
     def get_type(self, var_type):
-        if var_type in ['int', 'float', 'double', 'char', 'short', 'long']:
+        if var_type in ['int', 'float', 'double', 'char', 'short', 'long', 'byte']:
             return 'number'
         return var_type
 
-    def add_function(self, name, args_size, return_type):
-        real_name = name + ' ' + str(args_size)
+    def add_function(self, name, args, return_type):
+        real_args = list(map(lambda x: self.get_type(x), args))
+        real_name = name + str(real_args)
         self.functions[real_name] = self.get_type(return_type)
 
-    def check_function(self, name, args_size):
-        real_name = name + ' ' + str(args_size)
+    def check_function(self, name, args):
+        real_args = list(map(lambda x: self.get_type(x), args))
+        real_name = name + str(real_args)
         if real_name not in self.functions:
             raise Exception('Cannot resolve function name "{}"'.format(name))
 
-    def get_return_type(self, name, args_size):
-        self.check_function(name, args_size)
-        return self.functions[name + ' ' + str(args_size)]
+    def get_return_type(self, name, args):
+        real_args = list(map(lambda x: self.get_type(x), args))
+        self.check_function(name, args)
+        return self.functions[name + str(real_args)]
 
 
 context_manager = ContextManager()

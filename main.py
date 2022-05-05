@@ -34,7 +34,7 @@ def main():
                         'Please select another path.'.format(compiled_file_name))
 
     # DEBUG
-    folder = 'tests\\new_tests\\arraylist'
+    folder = 'tests\\correct_tests\\function'
     java_file_name = os.path.join(folder, 'Main.java')
     cpp_file_name = os.path.join(folder, 'main.cpp')
     compiled_file_name = os.path.join(folder, 'main.exe')
