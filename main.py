@@ -1,7 +1,6 @@
 import argparse
 import os
 import subprocess
-import sys
 from pathlib import Path
 
 from translator import Translator
@@ -34,10 +33,10 @@ def main():
                         'Please select another path.'.format(compiled_file_name))
 
     # DEBUG
-    folder = 'tests\\correct_tests\\function'
-    java_file_name = os.path.join(folder, 'Main.java')
-    cpp_file_name = os.path.join(folder, 'main.cpp')
-    compiled_file_name = os.path.join(folder, 'main.exe')
+    # folder = 'tests\\correct_tests\\function'
+    # java_file_name = os.path.join(folder, 'Main.java')
+    # cpp_file_name = os.path.join(folder, 'main.cpp')
+    # compiled_file_name = os.path.join(folder, 'main.exe')
 
     with open(java_file_name, 'r') as java_file:
         with open(cpp_file_name, 'w') as cpp_file:

@@ -109,65 +109,16 @@ java_rules = [
          is_multiple=False
          ),
 
-    Rule('~instruction~',
-         ct(['~assignment~', ';']),
-         InstructionDGN,
-         what='assignment'),
-    Rule('~instruction~',
-         ct(['~var_declaration~', ';']),
-         InstructionDGN,
-         what='var_declaration'
-         ),
-    Rule('~instruction~',
-         ct(['~function_call~', ';']),
-         InstructionDGN,
-         what='function_call'
-         ),
-    Rule('~instruction~',
-         ct(['~expression~', ';']),
-         InstructionDGN,
-         what='expression'
-         ),
-    Rule('~instruction~',
-         ['~cycle~'],
-         InstructionDGN,
-         what='cycle'
-         ),
-    Rule('~instruction~',
-         ['~if_operator~'],
-         InstructionDGN,
-         what='if_operator'
-         ),
-    Rule('~instruction~',
-         ct(['~function_return~', ';']),
-         InstructionDGN,
-         what='function_return'
-         ),
-    Rule('~instruction~',
-         ct(['~array1_initialization~', ';']),
-         InstructionDGN,
-         what='array1_initialization'
-         ),
-    Rule('~instruction~',
-         ct(['~array2_initialization~', ';']),
-         InstructionDGN,
-         what='array2_initialization'
-         ),
-    Rule('~instruction~',
-         ct(['~array1_element_assignment~', ';']),
-         InstructionDGN,
-         what='array1_element_assignment'
-         ),
-    Rule('~instruction~',
-         ct(['~array2_element_assignment~', ';']),
-         InstructionDGN,
-         what='array2_element_assignment'
-         ),
-    Rule('~instruction~',
-         ct(['~arraylist_initialization~', ';']),
-         InstructionDGN,
-         what='arraylist_initialization'
-         ),
+    *[
+        Rule('~instruction~',
+             ct([f'~{what}~', ';']),
+             InstructionDGN,
+             what=what)
+        for what in ['assignment', 'var_declaration', 'function_call', 'expression', 'cycle',
+                     'if_operator', 'function_return', 'array1_initialization', 'array2_initialization',
+                     'array1_element_assignment', 'array2_element_assignment', 'arraylist_initialization',
+                     'arraylist_add', 'arraylist_clear', 'arraylist_remove']
+    ],
 
     Rule('~assignment~',
          ct(['~identifier~', '~operator_assignment~', '~expression~']),
@@ -180,45 +131,15 @@ java_rules = [
         for i in ASSIGNMENT_OPERATORS
     ],
 
-    Rule('~expression~',
-         ['~logical_expression~'],
-         ExpressionDGN,
-         what='logical_expression'),
-    Rule('~expression~',
-         ['~math_expression~'],
-         ExpressionDGN,
-         what='math_expression'
-         ),
-    Rule('~expression~',
-         ['~symb_value~'],
-         ExpressionDGN,
-         what='symb_value'
-         ),
-    Rule('~expression~',
-         ['~identifier~'],
-         ExpressionDGN,
-         what='identifier'
-         ),
-    Rule('~expression~',
-         ['~array1_element~'],
-         ExpressionDGN,
-         what='array1_element'
-         ),
-    Rule('~expression~',
-         ['~array2_element~'],
-         ExpressionDGN,
-         what='array2_element'
-         ),
-    Rule('~expression~',
-         ['~function_call~'],
-         ExpressionDGN,
-         what='function_call'
-         ),
-    Rule('~expression~',
-         ['~string_literal~'],
-         ExpressionDGN,
-         what='string_literal'
-         ),
+    *[
+        Rule('~expression~',
+             ct([f'~{what}~']),
+             ExpressionDGN,
+             what=what)
+        for what in ['logical_expression', 'math_expression', 'symb_value', 'identifier',
+                     'array1_element', 'array2_element', 'function_call', 'string_literal',
+                     'arraylist_get']
+    ],
 
     Rule('~logical_expression~',
          ['~boolean_value~'],
@@ -249,31 +170,25 @@ java_rules = [
          LogicalExpressionDGN,
          what='braced'
          ),
+    Rule('~logical_expression~',
+         ct(['~arraylist_contains~']),
+         LogicalExpressionDGN,
+         what='arraylist_contains'
+         ),
+    Rule('~logical_expression~',
+         ct(['~arraylist_is_empty~']),
+         LogicalExpressionDGN,
+         what='arraylist_is_empty'
+         ),
 
-    Rule('~math_expression~',
-         ['~number~'],
-         MathExpressionDGN,
-         what='number'),
-    Rule('~math_expression~',
-         ['~identifier~'],
-         MathExpressionDGN,
-         what='identifier'
-         ),
-    Rule('~math_expression~',
-         ['~array1_element~'],
-         MathExpressionDGN,
-         what='array1_element'
-         ),
-    Rule('~math_expression~',
-         ['~array2_element~'],
-         MathExpressionDGN,
-         what='array2_element'
-         ),
-    Rule('~math_expression~',
-         ['~function_call~'],
-         MathExpressionDGN,
-         what='function_call'
-         ),
+    *[
+        Rule('~math_expression~',
+             [f'~{what}~'],
+             MathExpressionDGN,
+             what=what)
+        for what in ['number', 'identifier', 'array1_element', 'array2_element',
+                     'function_call', 'arraylist_size']
+    ],
     Rule('~math_expression~',
          ct(['~math_expression~', '~addition_sign~', '~math_expression~']),
          MathExpressionDGN,
@@ -340,15 +255,12 @@ java_rules = [
         for i in COMPARISON_OPERATORS
     ],
 
-    Rule('~symb_value~',
-         ["'", '~letter~', "'"],
-         SymbValueDGN),
-    Rule('~symb_value~',
-         ["'", '~digit~', "'"],
-         SymbValueDGN),
-    Rule('~symb_value~',
-         ["'", '~other_symb~', "'"],
-         SymbValueDGN),
+    *[
+        Rule('~symb_value~',
+            ["'", f'~f{what}~', "'"],
+            SymbValueDGN)
+        for what in ['letter', 'digit', 'other_symb']
+    ],
 
     *[
         Rule('~other_symb~',
@@ -489,7 +401,7 @@ java_rules = [
          FunctionReturnTypeDGN,
          is_void=False),
     Rule('~function_return_type~',
-         ct(['void']),
+         ['void'],
          FunctionReturnTypeDGN,
          is_void=True
          ),
@@ -630,10 +542,6 @@ java_rules = [
          ),
 
     Rule('~string_letters~',
-         ['~letter~', '~string_letters~'],
-         StringLettersDGN,
-         is_multiple=True),
-    Rule('~string_letters~',
          ['~digit~', '~string_letters~'],
          StringLettersDGN,
          is_multiple=True
@@ -688,41 +596,7 @@ java_rules = [
              cpp_type=cpp_type)
         for wrapper_type, cpp_type in WRAPPER_TYPES_MAPPING.items()
     ],
-    Rule('~instruction~',
-         ct(['~arraylist_add~', ';']),
-         InstructionDGN,
-         what='arraylist_add'
-         ),
-    Rule('~instruction~',
-         ct(['~arraylist_clear~', ';']),
-         InstructionDGN,
-         what='arraylist_clear'
-         ),
-    Rule('~instruction~',
-         ct(['~arraylist_remove~', ';']),
-         InstructionDGN,
-         what='arraylist_remove'
-         ),
-    Rule('~expression~',
-         ct(['~arraylist_get~']),
-         ExpressionDGN,
-         what='arraylist_get'
-         ),
-    Rule('~math_expression~',
-         ct(['~arraylist_size~']),
-         MathExpressionDGN,
-         what='arraylist_size'
-         ),
-    Rule('~logical_expression~',
-         ct(['~arraylist_contains~']),
-         LogicalExpressionDGN,
-         what='arraylist_contains'
-         ),
-    Rule('~logical_expression~',
-         ct(['~arraylist_is_empty~']),
-         LogicalExpressionDGN,
-         what='arraylist_is_empty'
-         ),
+
     Rule('~arraylist_add~',
          ['~identifier~'] + ct(['.add', '(', '~expression~', ')']),
          ArraylistAddDGN),
