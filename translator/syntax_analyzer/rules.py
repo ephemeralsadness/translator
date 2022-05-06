@@ -170,16 +170,6 @@ java_rules = [
          LogicalExpressionDGN,
          what='braced'
          ),
-    Rule('~logical_expression~',
-         ct(['~arraylist_contains~']),
-         LogicalExpressionDGN,
-         what='arraylist_contains'
-         ),
-    Rule('~logical_expression~',
-         ct(['~arraylist_is_empty~']),
-         LogicalExpressionDGN,
-         what='arraylist_is_empty'
-         ),
 
     *[
         Rule('~math_expression~',
@@ -189,6 +179,7 @@ java_rules = [
         for what in ['number', 'identifier', 'array1_element', 'array2_element',
                      'function_call', 'arraylist_size']
     ],
+
     Rule('~math_expression~',
          ct(['~math_expression~', '~addition_sign~', '~math_expression~']),
          MathExpressionDGN,
@@ -401,7 +392,7 @@ java_rules = [
          FunctionReturnTypeDGN,
          is_void=False),
     Rule('~function_return_type~',
-         ['void'],
+         ct(['void']),
          FunctionReturnTypeDGN,
          is_void=True
          ),
@@ -542,6 +533,10 @@ java_rules = [
          ),
 
     Rule('~string_letters~',
+         ['~letter~', '~string_letters~'],
+         StringLettersDGN,
+         is_multiple=True),
+    Rule('~string_letters~',
          ['~digit~', '~string_letters~'],
          StringLettersDGN,
          is_multiple=True
@@ -596,7 +591,16 @@ java_rules = [
              cpp_type=cpp_type)
         for wrapper_type, cpp_type in WRAPPER_TYPES_MAPPING.items()
     ],
-
+    Rule('~logical_expression~',
+         ct(['~arraylist_contains~']),
+         LogicalExpressionDGN,
+         what='arraylist_contains'
+         ),
+    Rule('~logical_expression~',
+         ct(['~arraylist_is_empty~']),
+         LogicalExpressionDGN,
+         what='arraylist_is_empty'
+         ),
     Rule('~arraylist_add~',
          ['~identifier~'] + ct(['.add', '(', '~expression~', ')']),
          ArraylistAddDGN),
