@@ -24,13 +24,13 @@ def main():
     compile = args.compile or (args.compilepath is not None)
 
     if not os.path.isfile(java_file_name):
-        raise Exception('Cannot find file by that path: {}.'.format(java_file_name))
+        raise Exception(f'Cannot find file by that path: {java_file_name}.')
     if (not force) and (os.path.isdir(cpp_file_name) or os.path.isfile(cpp_file_name)):
-        raise Exception('There is a file/directory by that path provided in --cpp: {}. '
-                        'Please select another path.'.format(cpp_file_name))
+        raise Exception(f'There is a file/directory by that path provided in --cpp: {cpp_file_name}. '
+                        'Please select another path.')
     if compile and ((not force) and (os.path.isdir(compiled_file_name) or os.path.isfile(compiled_file_name))):
-        raise Exception('There is a file/directory by that path provided in --compilepath: {}. '
-                        'Please select another path.'.format(compiled_file_name))
+        raise Exception(f'There is a file/directory by that path provided in --compilepath: {compiled_file_name}. '
+                        'Please select another path.')
 
     # DEBUG
     # folder = 'tests\\correct_tests\\function'
@@ -43,15 +43,15 @@ def main():
             translator = Translator(os.path.dirname(Path(java_file_name)), debug)
             cpp_source_code = translator.run(java_file.read())
             cpp_file.write(str(cpp_source_code))
-            print('Success. Output saved to {}.'.format(cpp_file_name))
+            print(f'Success. Output saved to {cpp_file_name}.')
 
     if compile:
-        command_to_compile = 'g++ {} -o {}'.format(cpp_file_name, compiled_file_name)
+        command_to_compile = f'g++ {cpp_file_name} -o {compiled_file_name}'
         sp = subprocess.run(command_to_compile, shell=False)
         if sp.returncode == 0:
-            print('Success. Binary saved to {}.'.format(compiled_file_name))
+            print(f'Success. Binary saved to {compiled_file_name}.')
         else:
-            raise Exception('g++ return code {}. '.format(sp.returncode))
+            raise Exception(f'g++ return code {sp.returncode}. ')
 
 
 if __name__ == '__main__':

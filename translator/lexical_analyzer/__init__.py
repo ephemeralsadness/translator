@@ -35,7 +35,7 @@ class LexicalAnalyzer:
             state = new_state
 
             if state == State.ERROR:
-                raise Exception('Unexpected symbol: {} at line {}, symbol {}'.format(c, line_number, symbol_number))
+                raise Exception(f'Unexpected symbol: {c} at line {line_number}, symbol {symbol_number}')
 
             if c == '\n':
                 line_number += 1
@@ -53,7 +53,7 @@ class LexicalAnalyzer:
         # post-check
         for token in tokens:
             if token[0] in Symbols.OPERATORS and token not in constants.OPERATORS:
-                raise Exception('Bad operator: {}'.format(token))
+                raise Exception(f'Bad operator: {token}')
 
         return tokens
 

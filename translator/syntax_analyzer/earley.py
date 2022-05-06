@@ -145,6 +145,6 @@ def make_right_parsing(whitespace_tokens):
                 break
         first_line = whitespace_tokens[index-10:index+10]+'\n'
         second_line = ' '*7 + '^^^^' + ' '*9
-        raise Exception('Incorrect sentence, symb # {}\n'.format(index)+first_line+second_line)
+        raise Exception(f'Incorrect sentence, symb # {index}\n'+first_line+second_line)
 
     return to_lr(last)

@@ -66,9 +66,9 @@ class IdentifierDGN(DGN):
         var = context_manager.get_variable(self.value)
         self.is_byte = var.original_var_type == 'char'
         if var is None:
-            raise Exception('Variable "{}" has not been declared'.format(self.value))
+            raise Exception(f'Variable "{self.value}" has not been declared')
         if not var.is_init:
-            raise Exception('Variable "{}" has not been initialized before using'.format(self.value))
+            raise Exception(f'Variable "{self.value}" has not been initialized before using')
 
     def generate(self):
         if self.is_byte:
@@ -185,10 +185,10 @@ class AssignmentDGN(DGN):
     def check(self):
         var = context_manager.get_variable(self.identifier.value)
         if var is None:
-            raise Exception('Cannot assign value to an undeclared variable "{}"'.format(self.identifier.value))
+            raise Exception(f'Cannot assign value to an undeclared variable "{self.identifier.value}"')
         self.expression.check()
         if self.identifier.type() != self.expression.type():
-            raise Exception('Bad assignment to "{}": wrong rhs type'.format(self.identifier.value))
+            raise Exception(f'Bad assignment to "{self.identifier.value}": wrong rhs type')
 
     def generate(self):
         generator_manager.print(self.identifier.value)
@@ -299,19 +299,19 @@ class MathExpressionDGN(DGN):
             var = context_manager.get_variable(self.value.value)
             self.value.check()
             if var is None:
-                raise Exception('Variable "{}" has not been declared'.format(self.value.value))
+                raise Exception(f'Variable "{self.value.value}" has not been declared')
             if var.var_type != 'number':
-                raise Exception('Variable "{}" wrong type: {}'.format(self.value.value, var.var_type))
+                raise Exception(f'Variable "{self.value.value}" wrong type: {var.var_type}')
             if not var.is_init:
-                raise Exception('Variable "{}" has not been initialized before using'.format(self.value.value))
+                raise Exception(f'Variable "{self.value.value}" has not been initialized before using')
             if self.value.type() != 'number':
-                raise Exception('Variable "{}" type is not number'.format(self.value.value))
+                raise Exception(f'Variable "{self.value.value}" type is not number')
         elif self.what == 'array1_element' or self.what == 'array2_element':
             ...  # TODO make something
         elif self.what == 'function_call':
             self.value.check()
             if self.value.type() != 'number':
-                raise Exception('Value type is not number'.format(self.value.value))
+                raise Exception(f'Value {self.value.value} type is not number')
 
     def generate(self):
         if self.what in ['+', '-', '*', '/', '%']:
@@ -646,7 +646,7 @@ class VarDeclarationDGN(DGN):
         context_manager.create_variable(self.identifier, self.type, self.is_init)
         if self.is_init:
             if context_manager.get_type(self.type) != self.expression.type():
-                raise Exception('Bad initialization of variable "{}": wrong types'.format(self.identifier))
+                raise Exception(f'Bad initialization of variable "{self.identifier}": wrong types')
 
     def generate(self):
         generator_manager.print(self.type)
@@ -910,7 +910,7 @@ class Array1ElementAssignmentDGN(DGN):
         self.expression.check()
         self.array1element.check()
         if self.array1element.identifier.type() != self.expression.type():
-            raise Exception('Bad assignment to "{}[]": wrong rhs type'.format(self.array1element.identifier.value))
+            raise Exception(f'Bad assignment to "{self.array1element.identifier.value}[]": wrong rhs type')
 
     def generate(self):
         self.array1element.generate()
@@ -931,7 +931,7 @@ class Array2ElementAssignmentDGN(DGN):
         self.expression.check()
         self.array2element.check()
         if self.array2element.type() != self.expression.type():
-            raise Exception('Bad assignment to "{}[]": wrong rhs type'.format(self.array2element.identifier.value))
+            raise Exception(f'Bad assignment to "{self.array2element.identifier.value}[]": wrong rhs type')
 
     def generate(self):
         self.array2element.generate()
@@ -951,7 +951,7 @@ class Array1ElementDGN(DGN):
         self.index.check()
         var = context_manager.get_variable(self.identifier.value)
         if var is None or var.what != 'array1':
-            raise Exception('Variable "{}" has not been declared'.format(self.identifier.value))
+            raise Exception(f'Variable "{self.identifier.value}" has not been declared')
 
     def generate(self):
         generator_manager.print(self.identifier.value)
@@ -975,7 +975,7 @@ class Array2ElementDGN(DGN):
         self.index2.check()
         var = context_manager.get_variable(self.identifier.value)
         if var is None or var.what != 'array2':
-            raise Exception('Variable "{}" has not been declared'.format(self.identifier.value))
+            raise Exception(f'Variable "{self.identifier.value}" has not been declared')
 
     def generate(self):
         generator_manager.print(self.identifier.value)
@@ -1016,7 +1016,7 @@ class ArraylistAddDGN(DGN):
         self.expression.check()
         var = context_manager.get_variable(self.identifier.value)
         if var is None or var.what != 'arraylist':
-            raise Exception('Variable "{}" has not been declared'.format(self.identifier.value))
+            raise Exception(f'Variable "{self.identifier.value}" has not been declared')
 
     def generate(self):
         generator_manager.print(self.identifier.value)
@@ -1033,7 +1033,7 @@ class ArraylistClearDGN(DGN):
     def check(self):
         var = context_manager.get_variable(self.identifier.value)
         if var is None or var.what != 'arraylist':
-            raise Exception('Variable "{}" has not been declared'.format(self.identifier.value))
+            raise Exception(f'Variable "{self.identifier.value}" has not been declared')
 
     def generate(self):
         generator_manager.print(self.identifier.value)
@@ -1050,7 +1050,7 @@ class ArraylistRemoveDGN(DGN):
         self.expression.check()
         var = context_manager.get_variable(self.identifier.value)
         if var is None or var.what != 'arraylist':
-            raise Exception('Variable "{}" has not been declared'.format(self.identifier.value))
+            raise Exception(f'Variable "{self.identifier.value}" has not been declared')
 
     def generate(self):
         generator_manager.print(self.identifier.value)
@@ -1071,7 +1071,7 @@ class ArraylistGetDGN(DGN):
         self.expression.check()
         var = context_manager.get_variable(self.identifier.value)
         if var is None or var.what != 'arraylist':
-            raise Exception('Variable "{}" has not been declared'.format(self.identifier.value))
+            raise Exception(f'Variable "{self.identifier.value}" has not been declared')
 
     def generate(self):
         generator_manager.print(self.identifier.value)
@@ -1091,7 +1091,7 @@ class ArraylistSizeDGN(DGN):
     def check(self):
         var = context_manager.get_variable(self.identifier.value)
         if var is None or var.what != 'arraylist':
-            raise Exception('Variable "{}" has not been declared'.format(self.identifier.value))
+            raise Exception(f'Variable "{self.identifier.value}" has not been declared')
 
     def generate(self):
         generator_manager.print(self.identifier.value)
@@ -1111,7 +1111,7 @@ class ArraylistContainsDGN(DGN):
         self.expression.check()
         var = context_manager.get_variable(self.identifier.value)
         if var is None or var.what != 'arraylist':
-            raise Exception('Variable "{}" has not been declared'.format(self.identifier.value))
+            raise Exception(f'Variable "{self.identifier.value}" has not been declared')
 
     def generate(self):
         generator_manager.print('(')
@@ -1136,7 +1136,7 @@ class ArraylistIsEmptyDGN(DGN):
     def check(self):
         var = context_manager.get_variable(self.identifier.value)
         if var is None or var.what != 'arraylist':
-            raise Exception('Variable "{}" has not been declared'.format(self.identifier.value))
+            raise Exception(f'Variable "{self.identifier.value}" has not been declared')
 
     def generate(self):
         generator_manager.print(self.identifier.value)

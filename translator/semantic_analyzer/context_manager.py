@@ -25,12 +25,12 @@ class ContextManager:
 
     def check_variable_does_not_exists(self, name):
         if name in KEYWORDS:
-            raise Exception('Unexpected reserved name for a variable "{}"'.format(name))
+            raise Exception(f'Unexpected reserved name for a variable "{name}"')
         if name in self.functions:
-            raise Exception('Mismatch function/variable "{}"'.format(name))
+            raise Exception(f'Mismatch function/variable "{name}"')
         for scope in self.scopes:
             if name in scope:
-                raise Exception('Variable with name "{}" has been already declared'.format(name))
+                raise Exception(f'Variable with name "{name}" has been already declared')
 
     def create_variable(self, name, var_type, is_init):
         self.check_variable_does_not_exists(name)
@@ -64,7 +64,7 @@ class ContextManager:
         real_args = list(map(lambda x: self.get_type(x), args))
         real_name = name + str(real_args)
         if real_name not in self.functions:
-            raise Exception('Cannot resolve function name "{}"'.format(name))
+            raise Exception(f'Cannot resolve function name "{name}"')
 
     def get_return_type(self, name, args):
         real_args = list(map(lambda x: self.get_type(x), args))
